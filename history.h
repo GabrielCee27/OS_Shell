@@ -5,7 +5,7 @@
 
 struct history_entry {
     unsigned long cmd_id;
-    unsigned long run_time;
+    double run_time;
     /* What else do we need here? */
 };
 
