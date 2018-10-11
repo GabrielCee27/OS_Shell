@@ -25,11 +25,13 @@ int main(void) {
       print_prompt();
       char *line = NULL;
       size_t line_size = 0;
+      //BUG: Can't properly delete in command line
       getline(&line, &line_size, stdin);
       printf("-> %s", line);
 
       //TODO: save full command line for history
       char *token = strtok(line, " \t\n\r");
+
       //TODO:research ARG_MAX to find the max num of
       // args possible for a command
       char *commands[10];
@@ -41,40 +43,39 @@ int main(void) {
         commands[i++] = token;
         token = strtok(NULL, " \t\n\r");
       }
-
-      if(strcmp(commands[0], "exit") == 0){
-        return 0;
-      }
-
       //execvp needs last element to be null
       commands[i] = (char *) NULL;
 
-      //TODO: check err status of fork and exec
-      pid_t pid = fork();
-      if(pid == 0){
-        //child
+      if(commands[0] != NULL){
 
-        printf("Executing: %s", line);
+        if(strcmp(commands[0], "exit") == 0){
+          exit(0);
+        }
 
-        //recommended to use execvp
-        //since we are gonna have an array of arguments
-        execvp(commands[0], commands);
+        //TODO: check err status of fork and exec
+        pid_t pid = fork();
+        printf("pid: %d\n", pid);
+        if(pid == 0){
+          //child
+
+          printf("Executing: %s\n", line);
+
+          //recommended to use execvp
+          //since we are gonna have an array of arguments
+          int exec_stat = execvp(commands[0], commands);
+          if(exec_stat < 0)
+            exit(0);
+        }
+        else{
+          //parent
+          //waits for child to finish
+          int status;
+          wait(&status); //waits for any child to finish. Returns child pid
+          printf("Child exited. Status: %d\n", status);
+        }
       }
-      else{
-        //parent
-        //waits for child to finish
-        int status;
-        wait(&status); //waits for any child to finish
-        printf("Child exited. Status: %d\n", status);
-      }
+
     }
-
-    // double start = get_time();
-    // print_history();
-    // sleep(1);
-    // double end = get_time();
-    //
-    // printf("Time elapsed: %fs\n", end - start);
 
     return 0;
 }
