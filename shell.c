@@ -8,13 +8,28 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "history.h"
 #include "timer.h"
 
+
 void print_prompt(void){
-  //TODO:
-  printf("$ ");
+  //TODO: if the CWD is the user’s home directory,
+  //then the entire path is replaced with ~
+
+  char *user = getlogin();
+  char hostname[HOST_NAME_MAX];
+  gethostname(hostname, HOST_NAME_MAX);
+  char cwd[256];
+  getcwd(cwd, sizeof(cwd));
+
+  time_t now = time(NULL);
+  struct tm *now_struct = localtime(&now);
+
+  // printf("%d:%02d", now_struct->tm_hour, now_struct->tm_min);
+
+  printf("[#|%d:%02d|%s@%s:%s] $ ", now_struct->tm_hour, now_struct->tm_min, user, hostname, cwd);
   fflush(stdout);
 }
 
