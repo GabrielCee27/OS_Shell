@@ -14,16 +14,27 @@
 #include "timer.h"
 
 int command_count = 0;
+char *user;
+char hostname[HOST_NAME_MAX];
+char cwd[256];
+
 
 void print_prompt(void){
   //TODO: if the CWD is the user’s home directory,
   //then the entire path is replaced with ~
 
-  char *user = getlogin();
-  char hostname[HOST_NAME_MAX];
-  gethostname(hostname, HOST_NAME_MAX);
+  //NOTE: Able to test when cd works
+  // char *homedir = getenv("HOME");
+  // if(homedir != NULL){
+  //   printf("homedir: %s\n", homedir);
+  // }
 
-  char cwd[256];
+  // since these vars don't change, moved to global
+  // char *user = getlogin();
+  // char hostname[HOST_NAME_MAX];
+  // gethostname(hostname, HOST_NAME_MAX);
+
+  // char cwd[256];
   getcwd(cwd, sizeof(cwd));
 
   time_t now = time(NULL);
@@ -35,6 +46,9 @@ void print_prompt(void){
 }
 
 int main(void) {
+
+  user = getlogin();
+  gethostname(hostname, HOST_NAME_MAX);
 
     while(true){
       //works for now
