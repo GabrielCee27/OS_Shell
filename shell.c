@@ -87,18 +87,12 @@ int main(void) {
       printf("pid: %d\n", pid);
       if(pid == 0){
         //child
-
         printf("Executing: %s\n", line);
-
-        //recommended to use execvp
-        //since we are gonna have an array of arguments
-        int exec_stat = execvp(commands[0], commands);
-        if(exec_stat < 0)
+        if(execvp(commands[0], commands) < 0) //checks if failed
           exit(0);
       }
       else{
-        //parent
-        //waits for child to finish
+        //parent; waits for child to finish
         int status;
         wait(&status); //waits for any child to finish. Returns child pid
         printf("Child exited. Status: %d\n", status);
