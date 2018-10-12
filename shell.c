@@ -13,6 +13,7 @@
 #include "history.h"
 #include "timer.h"
 
+int command_count = 0;
 
 void print_prompt(void){
   //TODO: if the CWD is the user’s home directory,
@@ -21,15 +22,15 @@ void print_prompt(void){
   char *user = getlogin();
   char hostname[HOST_NAME_MAX];
   gethostname(hostname, HOST_NAME_MAX);
+
   char cwd[256];
   getcwd(cwd, sizeof(cwd));
 
   time_t now = time(NULL);
   struct tm *now_struct = localtime(&now);
 
-  // printf("%d:%02d", now_struct->tm_hour, now_struct->tm_min);
-
-  printf("[#|%d:%02d|%s@%s:%s] $ ", now_struct->tm_hour, now_struct->tm_min, user, hostname, cwd);
+  printf("[%d|%d:%02d|%s@%s:%s]$ ", command_count, now_struct->tm_hour,
+   now_struct->tm_min, user, hostname, cwd);
   fflush(stdout);
 }
 
@@ -89,7 +90,7 @@ int main(void) {
           printf("Child exited. Status: %d\n", status);
         }
       }
-
+      command_count++;
     }
 
     return 0;
