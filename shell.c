@@ -90,35 +90,42 @@ int main(void) {
         exit(0);
       }
 
+      start = get_time();
+
       //TODO: check err status of fork and exec
       pid_t pid = fork();
       printf("pid: %d\n", pid);
-      if(pid == 0){
-        //child
+      if(pid == 0){ //child
         // start = get_time();
         printf("Executing: %s\n", line);
         if(execvp(commands[0], commands) < 0) //checks if failed
           exit(0);
       }
-      else{
-        //parent; waits for child to finish
+      else{ //parent; waits for child to finish
         int status;
         wait(&status); //waits for any child to finish. Returns child pid
-        // finish = get_time();
-
-        // printf("Execution time: %f\n", finish - start);
-        //TODO: update history
-        // if(command_count < 100){
-        //   //allocate memory for new struct history entry
-        //   history[command_count] = new_history_entry();
-        //   command_count++;
-        // }
-        // else {
-        //   //overwrite an existing struct
-        // }
 
         printf("Child exited. Status: %d\n", status);
       }
+
+      finish = get_time();
+
+      // printf("Command execution info:\n");
+      // printf("\tCommand: %s\n", line_cpy);
+      // printf("\tComman no: %d\n", command_count);
+      // printf("\tExecution time: %f sec\n", finish - start);
+
+      //TODO: update history
+      if(command_count < HIST_MAX){
+        //allocate memory for new struct history entry
+        history[command_count] = new_history_entry(command_count, line_cpy, finish - start);
+      }
+      // else {
+      //   //overwrite an existing struct
+      // }
+
+      print_history(history, command_count+1);
+//
     }
     command_count++;
   }
