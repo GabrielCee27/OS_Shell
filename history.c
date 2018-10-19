@@ -7,7 +7,7 @@
 void print_history(struct history_entry **history, int c) {
   int i;
   for(i = 0; i < HIST_MAX && i < c; i++){
-    printf("%ld: %s : %f sec\n", history[i]->cmd_id, history[i]->command, history[i]->run_time);
+    printf("[%ld|%f] %s\n", history[i]->cmd_id, history[i]->run_time, history[i]->command);
   }
 }
 
