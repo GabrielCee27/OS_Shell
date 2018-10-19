@@ -4,8 +4,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+//TODO
 void print_history(struct history_entry **history, int c) {
   int i;
+
+  //Need to set start and end point if count > HIST_MAX
+  // End : c % HIST_MAX
+  // start : c + 1
+
   for(i = 0; i < HIST_MAX && i < c; i++){
     printf("[%ld|%f] %s\n", history[i]->cmd_id, history[i]->run_time, history[i]->command);
   }

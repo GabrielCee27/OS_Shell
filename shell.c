@@ -14,7 +14,7 @@
 #include "timer.h"
 
 struct history_entry *history [HIST_MAX];
-int command_count = 0;
+int command_count = 0; //should be index of last element in history array
 
 void print_prompt(void){
   //TODO: if the CWD is the user’s home directory,
