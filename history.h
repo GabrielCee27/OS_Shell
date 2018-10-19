@@ -4,9 +4,9 @@
 #define HIST_MAX 100
 
 struct history_entry {
-    unsigned long cmd_id;
+    unsigned long cmd_id; //
     double run_time;
-    /* What else do we need here? */
+    // char command[120];
 };
 
 void print_history();

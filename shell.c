@@ -40,6 +40,7 @@ void print_prompt(void){
   time_t now = time(NULL);
   struct tm *now_struct = localtime(&now);
 
+  //BUG: hour is off
   printf("[%d|%d:%02d|%s@%s:%s]$ ", command_count, now_struct->tm_hour,
    now_struct->tm_min, user, hostname, cwd);
   fflush(stdout);
