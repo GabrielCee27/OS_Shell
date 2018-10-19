@@ -13,11 +13,8 @@
 #include "history.h"
 #include "timer.h"
 
+struct history_entry *history [HIST_MAX];
 int command_count = 0;
-char *user;
-char hostname[HOST_NAME_MAX];
-char cwd[256];
-
 
 void print_prompt(void){
   //TODO: if the CWD is the user’s home directory,
@@ -29,12 +26,11 @@ void print_prompt(void){
   //   printf("homedir: %s\n", homedir);
   // }
 
-  // since these vars don't change, moved to global
-  // char *user = getlogin();
-  // char hostname[HOST_NAME_MAX];
-  // gethostname(hostname, HOST_NAME_MAX);
+  char *user = getlogin();
+  char hostname[HOST_NAME_MAX];
+  gethostname(hostname, HOST_NAME_MAX);
 
-  // char cwd[256];
+  char cwd[256];
   getcwd(cwd, sizeof(cwd));
 
   time_t now = time(NULL);
@@ -47,20 +43,31 @@ void print_prompt(void){
 }
 
 int main(void) {
+  double start, finish;
+  // int i; //TODO: need to free up
+  // for(i = 0; i < HIST_MAX; i++){
+  //   history.hist_arr[i] = malloc(sizeof(struct history_entry));
+  //   history.hist_arr[i]->cmd_id = 5;
+  // }
 
-  user = getlogin();
-  gethostname(hostname, HOST_NAME_MAX);
+  // for(i = 0; i < HIST_MAX ; i++){
+  //   printf("%d: %ld \n", i, history.hist_arr[i]->cmd_id);
+  // }
+
 
   while(true){
     //works for now
     print_prompt();
+
     char *line = NULL;
     size_t line_size = 0;
-    //BUG: Can't properly delete in command line
     getline(&line, &line_size, stdin);
+
+    char line_cpy[line_size];
+    strcpy(line_cpy, line); //use to populate history_entry later
+
     printf("-> %s", line);
 
-    //TODO: save full command line for history
     char *token = strtok(line, " \t\n\r");
 
     //TODO:research ARG_MAX to find the max num of
@@ -88,6 +95,7 @@ int main(void) {
       printf("pid: %d\n", pid);
       if(pid == 0){
         //child
+        // start = get_time();
         printf("Executing: %s\n", line);
         if(execvp(commands[0], commands) < 0) //checks if failed
           exit(0);
@@ -96,6 +104,19 @@ int main(void) {
         //parent; waits for child to finish
         int status;
         wait(&status); //waits for any child to finish. Returns child pid
+        // finish = get_time();
+
+        // printf("Execution time: %f\n", finish - start);
+        //TODO: update history
+        // if(command_count < 100){
+        //   //allocate memory for new struct history entry
+        //   history[command_count] = new_history_entry();
+        //   command_count++;
+        // }
+        // else {
+        //   //overwrite an existing struct
+        // }
+
         printf("Child exited. Status: %d\n", status);
       }
     }
