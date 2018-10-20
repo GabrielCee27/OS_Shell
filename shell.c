@@ -14,9 +14,9 @@
 #include "timer.h"
 
 struct history_entry *history [HIST_MAX];
-int command_count = 0; //should be index of last element in history array
+int command_count = 0;
 
-void print_prompt(void){
+struct tm *print_prompt(void){
   //TODO: if the CWD is the user’s home directory,
   //then the entire path is replaced with ~
 
@@ -35,29 +35,21 @@ void print_prompt(void){
 
   time_t now = time(NULL);
   struct tm *now_struct = localtime(&now);
+  // struct tm *now_struct = get_curr_time();
 
-  //BUG: hour is off
   printf("[%d|%d:%02d|%s@%s:%s]$ ", command_count, now_struct->tm_hour,
    now_struct->tm_min, user, hostname, cwd);
+
   fflush(stdout);
+  return now_struct;
 }
 
 int main(void) {
-  double start, finish;
-  // int i; //TODO: need to free up
-  // for(i = 0; i < HIST_MAX; i++){
-  //   history.hist_arr[i] = malloc(sizeof(struct history_entry));
-  //   history.hist_arr[i]->cmd_id = 5;
-  // }
-
-  // for(i = 0; i < HIST_MAX ; i++){
-  //   printf("%d: %ld \n", i, history.hist_arr[i]->cmd_id);
-  // }
-
+  double start;
 
   while(true){
     //works for now
-    print_prompt();
+    struct tm *curr_time = print_prompt();
 
     char *line = NULL;
     size_t line_size = 0;
@@ -87,6 +79,7 @@ int main(void) {
     if(commands[0] != NULL){
 
       if(strcmp(commands[0], "exit") == 0){
+        //TODO: free up heap
         exit(0);
       }
 
@@ -108,24 +101,18 @@ int main(void) {
         printf("Child exited. Status: %d\n", status);
       }
 
-      finish = get_time();
-
-      // printf("Command execution info:\n");
-      // printf("\tCommand: %s\n", line_cpy);
-      // printf("\tComman no: %d\n", command_count);
-      // printf("\tExecution time: %f sec\n", finish - start);
+      double exec_time = get_time() - start;
 
       //TODO: update history
       if(command_count < HIST_MAX){
         //allocate memory for new struct history entry
-        history[command_count] = new_history_entry(command_count, line_cpy, finish - start);
+        history[command_count] = new_history_entry(curr_time->tm_hour, curr_time->tm_min, command_count, line_cpy, exec_time);
       }
       // else {
       //   //overwrite an existing struct
       // }
 
       print_history(history, command_count+1);
-//
     }
     command_count++;
   }
