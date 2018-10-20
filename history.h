@@ -1,7 +1,8 @@
 #ifndef _HISTORY_H_
 #define _HISTORY_H_
 
-#define HIST_MAX 100
+// #define HIST_MAX 100
+#define HIST_MAX 3
 
 struct history_entry {
     unsigned long cmd_id;
@@ -19,5 +20,8 @@ struct history_entry *new_history_entry
   int command_count,
   char *command_line,
   double exec_time );
+
+void overwrite_history_entry(struct history_entry *entry, int h, int m,
+  int command_count, char *command_line, double exec_time);
 
 #endif

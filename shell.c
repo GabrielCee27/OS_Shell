@@ -48,7 +48,7 @@ int main(void) {
   double start;
 
   while(true){
-    //works for now
+
     struct tm *curr_time = print_prompt();
 
     char *line = NULL;
@@ -87,14 +87,14 @@ int main(void) {
 
       //TODO: check err status of fork and exec
       pid_t pid = fork();
-      printf("pid: %d\n", pid);
+      // printf("pid: %d\n", pid);
       if(pid == 0){ //child
         // start = get_time();
         printf("Executing: %s\n", line);
         if(execvp(commands[0], commands) < 0) //checks if failed
           exit(0);
       }
-      else{ //parent; waits for child to finish
+      else{ //parent
         int status;
         wait(&status); //waits for any child to finish. Returns child pid
 
@@ -105,14 +105,17 @@ int main(void) {
 
       //TODO: update history
       if(command_count < HIST_MAX){
-        //allocate memory for new struct history entry
-        history[command_count] = new_history_entry(curr_time->tm_hour, curr_time->tm_min, command_count, line_cpy, exec_time);
+        history[command_count] = new_history_entry(curr_time->tm_hour, curr_time->tm_min,
+          command_count, line_cpy, exec_time);
       }
-      // else {
-      //   //overwrite an existing struct
-      // }
+      else {
+        printf("Overwiting at %d\n", command_count % HIST_MAX);
+        //overwrite an existing struct
+        overwrite_history_entry(history[command_count % HIST_MAX], curr_time->tm_hour, curr_time->tm_min,
+          command_count, line_cpy, exec_time);
+      }
 
-      print_history(history, command_count+1);
+      print_history(history, command_count);
     }
     command_count++;
   }
