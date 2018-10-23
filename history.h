@@ -1,8 +1,8 @@
 #ifndef _HISTORY_H_
 #define _HISTORY_H_
 
-// #define HIST_MAX 100
-#define HIST_MAX 3
+#define HIST_MAX 100
+// #define HIST_MAX 3
 
 struct history_entry {
     unsigned long cmd_id;

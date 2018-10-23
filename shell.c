@@ -20,18 +20,18 @@ struct tm *print_prompt(void){
   //TODO: if the CWD is the user’s home directory,
   //then the entire path is replaced with ~
 
-  //NOTE: Able to test when cd works
-  // char *homedir = getenv("HOME");
-  // if(homedir != NULL){
-  //   printf("homedir: %s\n", homedir);
-  // }
-
   char *user = getlogin();
   char hostname[HOST_NAME_MAX];
   gethostname(hostname, HOST_NAME_MAX);
 
   char cwd[256];
   getcwd(cwd, sizeof(cwd));
+
+  char *homedir = getenv("HOME");
+  size_t hd_size = sizeof(homedir);
+  if(strncmp(homedir, cwd, hd_size) == 0){
+    //replace start w/ ~
+  }
 
   time_t now = time(NULL);
   struct tm *now_struct = localtime(&now);
@@ -43,12 +43,10 @@ struct tm *print_prompt(void){
   return now_struct;
 }
 
-//TODO
 void cd_to(char *path){
-  printf("Want to cd to: %s\n", path);
-  if(chdir(path) == -1){
+  //TODO: if no path given, cd to home dir
+  if(chdir(path) == -1)
     perror("chdir");
-  }
 }
 
 int main(void) {
@@ -61,6 +59,7 @@ int main(void) {
     char *line = NULL;
     size_t line_size = 0;
     getline(&line, &line_size, stdin);
+    //TODO: should ignore lines beginning w/ #
 
     char line_cpy[line_size];
     strcpy(line_cpy, line); //use to populate history_entry later
@@ -116,7 +115,7 @@ int main(void) {
         }
         else{ //parent
           int status;
-          wait(&status); //waits for any child to finish. Returns child pid
+          wait(&status); //waits for a child to finish; Returns child pid
           printf("Child exited. Status: %d\n", status);
         }
       }
