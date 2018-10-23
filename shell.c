@@ -35,13 +35,18 @@ struct tm *print_prompt(void){
 
   time_t now = time(NULL);
   struct tm *now_struct = localtime(&now);
-  // struct tm *now_struct = get_curr_time();
 
   printf("[%d|%d:%02d|%s@%s:%s]$ ", command_count, now_struct->tm_hour,
    now_struct->tm_min, user, hostname, cwd);
-
   fflush(stdout);
+
   return now_struct;
+}
+
+//TODO
+void cd_to(char *path){
+  printf("Want to cd to: %s\n", path);
+  //NOTE: use chdir()?
 }
 
 int main(void) {
@@ -77,13 +82,24 @@ int main(void) {
     commands[i] = (char *) NULL;
 
     if(commands[0] != NULL){
+      start = get_time();
 
+      /* Checking for built-in */
       if(strcmp(commands[0], "exit") == 0){
-        //TODO: free up heap
+        int i;
+        for(i = 0; i < HIST_MAX && i < command_count; i++)
+          free(history[i]);
+
         exit(0);
       }
+      else if(strcmp(commands[0], "history")){
+        print_history(history, command_count);
+      }
+      else if(strcmp(commands[0], "cd")){
+        //Don't fork after?
+        cd_to(commands[1]);
+      }
 
-      start = get_time();
 
       //TODO: check err status of fork and exec
       pid_t pid = fork();
@@ -115,7 +131,6 @@ int main(void) {
           command_count, line_cpy, exec_time);
       }
 
-      print_history(history, command_count);
     }
     command_count++;
   }
