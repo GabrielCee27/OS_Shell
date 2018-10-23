@@ -92,13 +92,13 @@ int main(void) {
 
         exit(0);
       }
-      else if(strcmp(commands[0], "history")){
-        print_history(history, command_count);
+      else if(strcmp(commands[0], "history") == 0){
+        print_history(history, command_count-1);
       }
-      else if(strcmp(commands[0], "cd")){
-        //Don't fork after?
+      else if(strcmp(commands[0], "cd") == 0){
         cd_to(commands[1]);
       }
+      //TODO: should not continue if executed built-in
 
 
       //TODO: check err status of fork and exec
@@ -124,9 +124,8 @@ int main(void) {
         history[command_count] = new_history_entry(curr_time->tm_hour, curr_time->tm_min,
           command_count, line_cpy, exec_time);
       }
-      else {
-        printf("Overwiting at %d\n", command_count % HIST_MAX);
-        //overwrite an existing struct
+      else { //overwrite an existing struct
+        // printf("Overwiting at %d\n", command_count % HIST_MAX);
         overwrite_history_entry(history[command_count % HIST_MAX], curr_time->tm_hour, curr_time->tm_min,
           command_count, line_cpy, exec_time);
       }
