@@ -16,6 +16,7 @@
 struct history_entry *history [HIST_MAX];
 int command_count = 0;
 
+
 struct tm *print_prompt(void){
   //TODO: if the CWD is the user’s home directory,
   //then the entire path is replaced with ~
@@ -28,9 +29,19 @@ struct tm *print_prompt(void){
   getcwd(cwd, sizeof(cwd));
 
   char *homedir = getenv("HOME");
-  size_t hd_size = sizeof(homedir);
-  if(strncmp(homedir, cwd, hd_size) == 0){
-    //replace start w/ ~
+  int homedir_len = strlen(homedir);
+  if(strncmp(homedir, cwd, homedir_len) == 0){
+    //TODO: replace start w/ ~
+    printf("home dir: %s\n", homedir);
+    printf("Size of homedir: %d\n", homedir_len);
+
+    int len = strlen(cwd) - homedir_len;
+    printf("len: %d\n", len);
+    cwd[0] = '~';
+    int i;
+    for(i = 1; i < len; i++){
+      cwd[i] = i + homedir_len;
+    }
   }
 
   time_t now = time(NULL);
@@ -49,7 +60,7 @@ void cd_to(char *path){
     perror("chdir");
 }
 
-void clean_exit(){
+void clean_exit(void){
   int i;
   for(i = 0; i < HIST_MAX && i < command_count; i++)
     free(history[i]);
