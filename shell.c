@@ -49,6 +49,13 @@ void cd_to(char *path){
     perror("chdir");
 }
 
+void clean_exit(){
+  int i;
+  for(i = 0; i < HIST_MAX && i < command_count; i++)
+    free(history[i]);
+  exit(0);
+}
+
 int main(void) {
   double start;
 
@@ -89,11 +96,7 @@ int main(void) {
       //TODO: refactor
       bool built_in = false;
       if(strcmp(commands[0], "exit") == 0){
-        int i;
-        for(i = 0; i < HIST_MAX && i < command_count; i++)
-          free(history[i]);
-
-        exit(0);
+        clean_exit();
       }
       else if(strcmp(commands[0], "history") == 0){
         print_history(history, command_count-1);
