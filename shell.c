@@ -46,7 +46,9 @@ struct tm *print_prompt(void){
 //TODO
 void cd_to(char *path){
   printf("Want to cd to: %s\n", path);
-  //NOTE: use chdir()?
+  if(chdir(path) == -1){
+    perror("chdir");
+  }
 }
 
 int main(void) {
@@ -85,6 +87,8 @@ int main(void) {
       start = get_time();
 
       /* Checking for built-in */
+      //TODO: refactor
+      bool built_in = false;
       if(strcmp(commands[0], "exit") == 0){
         int i;
         for(i = 0; i < HIST_MAX && i < command_count; i++)
@@ -94,32 +98,31 @@ int main(void) {
       }
       else if(strcmp(commands[0], "history") == 0){
         print_history(history, command_count-1);
+        built_in = true;
       }
       else if(strcmp(commands[0], "cd") == 0){
         cd_to(commands[1]);
+        built_in = true;
       }
-      //TODO: should not continue if executed built-in
 
-
-      //TODO: check err status of fork and exec
-      pid_t pid = fork();
-      // printf("pid: %d\n", pid);
-      if(pid == 0){ //child
-        // start = get_time();
-        printf("Executing: %s\n", line);
-        if(execvp(commands[0], commands) < 0) //checks if failed
+      if(built_in == false){
+        //TODO: refactor
+        pid_t pid = fork();
+        // printf("pid: %d\n", pid);
+        if(pid == 0){ //child
+          printf("Executing: %s\n", line);
+          if(execvp(commands[0], commands) < 0) //checks if failed
           exit(0);
-      }
-      else{ //parent
-        int status;
-        wait(&status); //waits for any child to finish. Returns child pid
-
-        printf("Child exited. Status: %d\n", status);
+        }
+        else{ //parent
+          int status;
+          wait(&status); //waits for any child to finish. Returns child pid
+          printf("Child exited. Status: %d\n", status);
+        }
       }
 
       double exec_time = get_time() - start;
 
-      //TODO: update history
       if(command_count < HIST_MAX){
         history[command_count] = new_history_entry(curr_time->tm_hour, curr_time->tm_min,
           command_count, line_cpy, exec_time);
