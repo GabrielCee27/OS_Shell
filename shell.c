@@ -18,8 +18,6 @@ int command_count = 0;
 
 
 struct tm *print_prompt(void){
-  //TODO: if the CWD is the user’s home directory,
-  //then the entire path is replaced with ~
 
   char *user = getlogin();
   char hostname[HOST_NAME_MAX];
@@ -31,17 +29,17 @@ struct tm *print_prompt(void){
   char *homedir = getenv("HOME");
   int homedir_len = strlen(homedir);
   if(strncmp(homedir, cwd, homedir_len) == 0){
-    //TODO: replace start w/ ~
-    printf("home dir: %s\n", homedir);
-    printf("Size of homedir: %d\n", homedir_len);
 
-    int len = strlen(cwd) - homedir_len;
-    printf("len: %d\n", len);
-    cwd[0] = '~';
-    int i;
-    for(i = 1; i < len; i++){
-      cwd[i] = i + homedir_len;
-    }
+    int temp_len = strlen(cwd) - homedir_len + 2;
+    char temp[temp_len];
+
+    temp[0] = '~';
+    int i = 1, k = homedir_len;
+    while(cwd[k] != '\0')
+      temp[i++] = cwd[k++];
+    temp[i] = '\0';
+
+    strcpy(cwd, temp);
   }
 
   time_t now = time(NULL);
