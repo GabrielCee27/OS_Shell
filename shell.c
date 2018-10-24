@@ -23,6 +23,7 @@ struct tm *print_prompt(void){
   char hostname[HOST_NAME_MAX];
   gethostname(hostname, HOST_NAME_MAX);
 
+  //TODO: refactor get_cwd
   char cwd[256];
   getcwd(cwd, sizeof(cwd));
 
@@ -53,7 +54,9 @@ struct tm *print_prompt(void){
 }
 
 void cd_to(char *path){
-  //TODO: if no path given, cd to home dir
+  if (path == NULL)
+    path = getenv("HOME");
+     
   if(chdir(path) == -1)
     perror("chdir");
 }
