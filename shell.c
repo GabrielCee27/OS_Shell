@@ -56,7 +56,7 @@ struct tm *print_prompt(void){
 void cd_to(char *path){
   if (path == NULL)
     path = getenv("HOME");
-     
+
   if(chdir(path) == -1)
     perror("chdir");
 }
@@ -91,8 +91,6 @@ int main(void) {
     // args possible for a command
     char *commands[10];
 
-    //TODO: inspect first element to check
-    // if built in or blank
     int i = 0;
     while(token != NULL){
       commands[i++] = token;
@@ -116,6 +114,20 @@ int main(void) {
       }
       else if(strcmp(commands[0], "cd") == 0){
         cd_to(commands[1]);
+        built_in = true;
+      }
+      //TODO: check for history execution
+      else if(commands[0][0] == '!'){
+        printf("History exec\n");
+
+        if(commands[0][1] == '!'){
+          printf("Re-run last command\n");
+        }
+
+        //TODO: parse command num of command; tok?
+
+        // char temp[256];
+        // get_command_at(commands[0], temp, history, command_count);
         built_in = true;
       }
 
