@@ -134,7 +134,7 @@ int main(void) {
         clean_exit();
       }
       else if(strcmp(cmd_line[0], "history") == 0){
-        print_history(history, curr_cmd_id-1);
+        print_history(history, curr_cmd_id);
         skip_exec = true;
       }
       else if(strcmp(cmd_line[0], "cd") == 0){

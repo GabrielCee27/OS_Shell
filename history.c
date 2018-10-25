@@ -18,10 +18,10 @@ void debug_print_history(struct history_entry **history, int curr_cmd_id){
 void print_history(struct history_entry **history, int curr_cmd_id) {
   // debug_print_history(history, curr_cmd_id);
 
-  int i = 0, count, elements = curr_cmd_id + 1;
+  int i = 0, count, elements = curr_cmd_id;
 
   if(curr_cmd_id >= HIST_MAX){
-    i = (curr_cmd_id % HIST_MAX) + 1;
+    i = (curr_cmd_id % HIST_MAX);
     elements = HIST_MAX;
   }
 
@@ -77,4 +77,8 @@ void get_command_at(int target_id, char *cmd_dest, struct history_entry **histor
 
 void get_last_cmd_of(char *target_cmd, char *cmd_dest, struct history_entry **history, int curr_cmd_id){
   //TODO
+  //iterate through history backwards by cmd_id
+
+
+
 }
