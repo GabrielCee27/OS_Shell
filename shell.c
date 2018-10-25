@@ -15,7 +15,7 @@
 #include "timer.h"
 
 struct history_entry *history [HIST_MAX];
-int curr_comm_id = 0;
+int curr_cmd_id = 0;
 
 
 struct tm *print_prompt(void){
@@ -47,7 +47,7 @@ struct tm *print_prompt(void){
   time_t now = time(NULL);
   struct tm *now_struct = localtime(&now);
 
-  printf("[%d|%d:%02d|%s@%s:%s]$ ", curr_comm_id, now_struct->tm_hour,
+  printf("[%d|%d:%02d|%s@%s:%s]$ ", curr_cmd_id, now_struct->tm_hour,
    now_struct->tm_min, user, hostname, cwd);
   fflush(stdout);
 
@@ -64,7 +64,7 @@ void cd_to(char *path){
 
 void clean_exit(void){
   int i;
-  for(i = 0; i < HIST_MAX && i < curr_comm_id; i++)
+  for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++)
     free(history[i]);
   exit(0);
 }
@@ -99,19 +99,21 @@ int main(void) {
       printf("\nHistory exec v2\n");
 
       if(line[1] == '!'){
-        printf("Re-run last command\n");
-      }
-
-      line = &(line[1]); //rm ! at start
-
-      if(isdigit(line[0]) != 0){
-        // char temp[256];
-        get_command_at(atoi(line), line, history, curr_comm_id);
-        // printf("temp command: %s\n", temp);
+        get_command_at(curr_cmd_id-1, line, history, curr_cmd_id);
       }
       else {
-        printf("Look for last call of: %s\n", line);
+        line = &(line[1]); //rm ! at start
+
+        if(isdigit(line[0]) != 0){
+          // char temp[256];
+          get_command_at(atoi(line), line, history, curr_cmd_id);
+          // printf("temp command: %s\n", temp);
+        }
+        else {
+          printf("Look for last call of: %s\n", line);
+        }
       }
+
     }
 
     char line_cpy[line_size];
@@ -139,7 +141,7 @@ int main(void) {
       //
       //   if(isdigit(cmd_line[0][0]) != 0){
       //     char temp[256];
-      //     get_command_at(atoi(cmd_line[0]), temp, history, curr_comm_id);
+      //     get_command_at(atoi(cmd_line[0]), temp, history, curr_cmd_id);
       //
       //     printf("temp command: %s\n", temp);
       //   }
@@ -154,7 +156,7 @@ int main(void) {
         clean_exit();
       }
       else if(strcmp(cmd_line[0], "history") == 0){
-        print_history(history, curr_comm_id-1);
+        print_history(history, curr_cmd_id-1);
         built_in = true;
       }
       else if(strcmp(cmd_line[0], "cd") == 0){
@@ -181,18 +183,18 @@ int main(void) {
 
       double exec_time = get_time() - start;
 
-      if(curr_comm_id < HIST_MAX){
-        history[curr_comm_id] = new_history_entry(curr_time->tm_hour, curr_time->tm_min,
-          curr_comm_id, line_cpy, exec_time);
+      if(curr_cmd_id < HIST_MAX){
+        history[curr_cmd_id] = new_history_entry(curr_time->tm_hour, curr_time->tm_min,
+          curr_cmd_id, line_cpy, exec_time);
       }
       else { //overwrite an existing struct
-        // printf("Overwiting at %d\n", curr_comm_id % HIST_MAX);
-        overwrite_history_entry(history[curr_comm_id % HIST_MAX], curr_time->tm_hour, curr_time->tm_min,
-          curr_comm_id, line_cpy, exec_time);
+        // printf("Overwiting at %d\n", curr_cmd_id % HIST_MAX);
+        overwrite_history_entry(history[curr_cmd_id % HIST_MAX], curr_time->tm_hour, curr_time->tm_min,
+          curr_cmd_id, line_cpy, exec_time);
       }
 
     }
-    curr_comm_id++;
+    curr_cmd_id++;
   }
 
     return 0;
