@@ -41,4 +41,11 @@ void get_command_at(
   int command_count
 );
 
+void get_last_cmd_of(
+  char *target_cmd,
+  char *cmd_dest,
+  struct history_entry **history,
+  int curr_cmd_id
+);
+
 #endif

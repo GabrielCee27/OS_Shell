@@ -26,6 +26,7 @@ struct tm *print_prompt(void){
 
   //TODO: refactor get_cwd
   char cwd[256];
+  /*--------------------------------------*/
   getcwd(cwd, sizeof(cwd));
 
   char *homedir = getenv("HOME");
@@ -43,6 +44,7 @@ struct tm *print_prompt(void){
 
     strcpy(cwd, temp);
   }
+  /*--------------------------------------*/
 
   time_t now = time(NULL);
   struct tm *now_struct = localtime(&now);
@@ -95,22 +97,20 @@ int main(void) {
     size_t line_size = 0;
     getline(&line, &line_size, stdin);
 
+    /* Checking for history execution */
     if(line[0] == '!'){
-      printf("\nHistory exec v2\n");
-
       if(line[1] == '!'){
         get_command_at(curr_cmd_id-1, line, history, curr_cmd_id);
       }
       else {
-        line = &(line[1]); //rm ! at start
-
+        line = &(line[1]); //rm !
         if(isdigit(line[0]) != 0){
-          // char temp[256];
           get_command_at(atoi(line), line, history, curr_cmd_id);
-          // printf("temp command: %s\n", temp);
         }
         else {
+          //TODO:
           printf("Look for last call of: %s\n", line);
+          // get_last_cmd_of(line, line, history, curr_cmd_id);
         }
       }
 
@@ -120,7 +120,6 @@ int main(void) {
     strcpy(line_cpy, line); //use to populate history_entry later
     printf("-> %s", line);
 
-
     //TODO:research ARG_MAX to find the max num of
     // args possible for a command
     char *cmd_line[10];
@@ -129,44 +128,24 @@ int main(void) {
     if(cmd_line[0] != NULL){
       start = get_time();
 
-      /* checking for history execution */
-      // if(cmd_line[0][0] == '!'){
-      //   printf("History exec\n");
-      //
-      //   if(cmd_line[0][1] == '!'){
-      //     printf("Re-run last command\n");
-      //   }
-      //
-      //   cmd_line[0] = &(cmd_line[0][1]); //rm ! at start
-      //
-      //   if(isdigit(cmd_line[0][0]) != 0){
-      //     char temp[256];
-      //     get_command_at(atoi(cmd_line[0]), temp, history, curr_cmd_id);
-      //
-      //     printf("temp command: %s\n", temp);
-      //   }
-      //   else {
-      //     printf("Look for last call of: %s\n", cmd_line[0]);
-      //   }
-      // }
-
-      /* Checking for built-in */
-      bool built_in = false;
+      /* Checking for built-ins */
+      bool skip_exec = false;
       if(strcmp(cmd_line[0], "exit") == 0){
         clean_exit();
       }
       else if(strcmp(cmd_line[0], "history") == 0){
         print_history(history, curr_cmd_id-1);
-        built_in = true;
+        skip_exec = true;
       }
       else if(strcmp(cmd_line[0], "cd") == 0){
         cd_to(cmd_line[1]);
-        built_in = true;
+        skip_exec = true;
       }
 
 
-      if(built_in == false){
+      if(skip_exec == false){
         //TODO: refactor execution
+        /*--------------------------------------*/
         pid_t pid = fork();
         // printf("pid: %d\n", pid);
         if(pid == 0){ //child
@@ -179,6 +158,7 @@ int main(void) {
           wait(&status); //waits for a child to finish; Returns child pid
           printf("Child exited. Status: %d\n", status);
         }
+        /*--------------------------------------*/
       }
 
       double exec_time = get_time() - start;

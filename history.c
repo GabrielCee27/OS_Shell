@@ -62,10 +62,8 @@ void overwrite_history_entry(struct history_entry *entry, int h, int m, int curr
   }
 
 //TODO:
-void get_command_at(int target_id, char *command_src, struct history_entry **history, int curr_cmd_id){
+void get_command_at(int target_id, char *cmd_dest, struct history_entry **history, int curr_cmd_id){
 
-  printf("Looking for command w/ id: %d\n", target_id);
-  printf("curr_cmd_id: %d\n", curr_cmd_id);
   debug_print_history(history, curr_cmd_id);
 
   if(target_id >= curr_cmd_id || (target_id < curr_cmd_id - HIST_MAX && target_id >= 0)){
@@ -74,7 +72,9 @@ void get_command_at(int target_id, char *command_src, struct history_entry **his
     return;
   }
 
-  printf("entry->cmd_id: %ld\n", history[target_id % HIST_MAX]->cmd_id);
-  printf("entry->command: %s\n", history[target_id % HIST_MAX]->command);
-  strcpy(command_src, history[target_id % HIST_MAX]->command);
+  strcpy(cmd_dest, history[target_id % HIST_MAX]->command);
+}
+
+void get_last_cmd_of(char *target_cmd, char *cmd_dest, struct history_entry **history, int curr_cmd_id){
+  //TODO
 }
