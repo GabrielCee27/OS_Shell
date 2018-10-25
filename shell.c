@@ -99,6 +99,8 @@ int main(void) {
 
     /* Checking for history execution */
     if(line[0] == '!'){
+      /* ------------------------------------------------------ */
+      // line = &(line[1]); //rm !
       if(line[1] == '!'){
         get_command_at(curr_cmd_id-1, line, history, curr_cmd_id);
       }
@@ -112,7 +114,7 @@ int main(void) {
           get_last_cmd_of(line, history, curr_cmd_id);
         }
       }
-
+      /* ------------------------------------------------------ */
     }
 
     char line_cpy[line_size];
@@ -148,7 +150,7 @@ int main(void) {
         pid_t pid = fork();
         // printf("pid: %d\n", pid);
         if(pid == 0){ //child
-          printf("Executing: %s\n", line);
+          printf("Child Executing: %s\n", line_cpy);
           if(execvp(cmd_line[0], cmd_line) < 0) //checks if failed
             exit(0);
         }
@@ -174,6 +176,7 @@ int main(void) {
       // debug_print_history(history, curr_cmd_id+1);
 
     }
+    //TODO: Don't increment if blank line; check skip_exec?
     curr_cmd_id++;
   }
 

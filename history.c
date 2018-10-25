@@ -76,11 +76,7 @@ void get_command_at(int target_id, char *cmd_dest, struct history_entry **histor
 }
 
 void get_last_cmd_of(char *target_cmd, struct history_entry **history, int curr_cmd_id){
-  //TODO
-
-  debug_print_history(history, curr_cmd_id);
-
-  printf("Look for last call of: %s\n", target_cmd);
+  // debug_print_history(history, curr_cmd_id);
 
   int i = curr_cmd_id - 1, count, num_entries = curr_cmd_id;
 
@@ -93,15 +89,14 @@ void get_last_cmd_of(char *target_cmd, struct history_entry **history, int curr_
     if(i == -1)
       i = HIST_MAX - 1;
 
-    printf("[%ld|%d:%d|%f] %s\n", history[i]->cmd_id, history[i]->hour, history[i]->min,
-    history[i]->run_time, history[i]->command);
-    //TODO: check if cmd
     int target_len = strlen(target_cmd);
-    if(strncmp(target_cmd, history[i]->command, target_len) == 0){
-      printf("FOUND ^^^^^^\n");
+    if(strncmp(target_cmd, history[i]->command, target_len-1) == 0){
+      strcpy(target_cmd, history[i]->command);
+      return;
     }
     i--;
   }
 
+  //TODO: Error handle if nothing was found
 
 }
