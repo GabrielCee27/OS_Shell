@@ -119,7 +119,7 @@ int main(void) {
 
     char line_cpy[line_size];
     strcpy(line_cpy, line); //use to populate history_entry later
-    printf("-> %s", line);
+    // printf("-> %s", line);
 
     //TODO:research ARG_MAX to find the max num of
     // args possible for a command

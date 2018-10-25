@@ -97,6 +97,7 @@ void get_last_cmd_of(char *target_cmd, struct history_entry **history, int curr_
     i--;
   }
 
-  //TODO: Error handle if nothing was found
+  printf("Did not find command in history\n");
+  strcpy(target_cmd, ""); //blank line should be handled in shell
 
 }
