@@ -2,7 +2,7 @@
 #define _HISTORY_H_
 
 // #define HIST_MAX 100
-#define HIST_MAX 3
+#define HIST_MAX 5
 
 struct history_entry {
     unsigned long cmd_id;
@@ -15,6 +15,11 @@ struct history_entry {
 void print_history(
   struct history_entry **history,
   int c
+);
+
+void debug_print_history(
+  struct history_entry **history,
+  int curr_cmd_id
 );
 
 struct history_entry *new_history_entry (
@@ -43,7 +48,6 @@ void get_command_at(
 
 void get_last_cmd_of(
   char *target_cmd,
-  char *cmd_dest,
   struct history_entry **history,
   int curr_cmd_id
 );

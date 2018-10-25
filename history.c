@@ -14,21 +14,21 @@ void debug_print_history(struct history_entry **history, int curr_cmd_id){
 
 }
 
-//BUG: Not printing out of order when exceeded HIST_MAX
 void print_history(struct history_entry **history, int curr_cmd_id) {
   // debug_print_history(history, curr_cmd_id);
 
-  int i = 0, count, elements = curr_cmd_id;
+  int i = 0, count, num_entries = curr_cmd_id;
 
   if(curr_cmd_id >= HIST_MAX){
     i = (curr_cmd_id % HIST_MAX);
-    elements = HIST_MAX;
+    num_entries = HIST_MAX;
   }
 
+  // printf("curr_cmd_id: %d\n", curr_cmd_id);
   // printf("Starting at: %d\n", i);
-  // printf("Num of elemens: %d\n", elements);
+  // printf("Num of elemens: %d\n", num_entries);
 
-  for(count = 0; count < elements; count++){
+  for(count = 0; count < num_entries; count++){
     if(i == HIST_MAX)
       i = 0;
     printf("[%ld|%d:%d|%f] %s\n", history[i]->cmd_id, history[i]->hour, history[i]->min,
@@ -75,10 +75,33 @@ void get_command_at(int target_id, char *cmd_dest, struct history_entry **histor
   strcpy(cmd_dest, history[target_id % HIST_MAX]->command);
 }
 
-void get_last_cmd_of(char *target_cmd, char *cmd_dest, struct history_entry **history, int curr_cmd_id){
+void get_last_cmd_of(char *target_cmd, struct history_entry **history, int curr_cmd_id){
   //TODO
-  //iterate through history backwards by cmd_id
 
+  debug_print_history(history, curr_cmd_id);
+
+  printf("Look for last call of: %s\n", target_cmd);
+
+  int i = curr_cmd_id - 1, count, num_entries = curr_cmd_id;
+
+  if(curr_cmd_id >= HIST_MAX){
+    i = (curr_cmd_id % HIST_MAX) - 1; //start at last entry
+    num_entries = HIST_MAX;
+  }
+
+  for(count = 0; count < num_entries; count++){
+    if(i == -1)
+      i = HIST_MAX - 1;
+
+    printf("[%ld|%d:%d|%f] %s\n", history[i]->cmd_id, history[i]->hour, history[i]->min,
+    history[i]->run_time, history[i]->command);
+    //TODO: check if cmd
+    int target_len = strlen(target_cmd);
+    if(strncmp(target_cmd, history[i]->command, target_len) == 0){
+      printf("FOUND ^^^^^^\n");
+    }
+    i--;
+  }
 
 
 }

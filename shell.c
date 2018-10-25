@@ -109,8 +109,7 @@ int main(void) {
         }
         else {
           //TODO:
-          printf("Look for last call of: %s\n", line);
-          // get_last_cmd_of(line, line, history, curr_cmd_id);
+          get_last_cmd_of(line, history, curr_cmd_id);
         }
       }
 
@@ -172,6 +171,7 @@ int main(void) {
         overwrite_history_entry(history[curr_cmd_id % HIST_MAX], curr_time->tm_hour, curr_time->tm_min,
           curr_cmd_id, line_cpy, exec_time);
       }
+      // debug_print_history(history, curr_cmd_id+1);
 
     }
     curr_cmd_id++;
