@@ -72,6 +72,22 @@ void clean_exit(void){
   exit(0);
 }
 
+void hist_exec(char *line) {
+  if(line[1] == '!'){
+    get_command_at(curr_cmd_id-1, line, history, curr_cmd_id);
+  }
+  else {
+    line = &(line[1]); //rm !
+    if(isdigit(line[0]) != 0){
+      get_command_at(atoi(line), line, history, curr_cmd_id);
+    }
+    else {
+      //TODO:
+      get_last_cmd_of(line, history, curr_cmd_id);
+    }
+  }
+}
+
 void parse_cmd_line(char *line, char **cmd_line) {
   char regex[4] = " \t\n\r";
   char *token = strtok(line, regex);
@@ -115,8 +131,10 @@ int main(void) {
 
     /* Checking for history execution */
     if(line[0] == '!'){
+      //TODO:
+      // hist_exec(line);
       /* ------------------------------------------------------ */
-      // line = &(line[1]); //rm !
+
       if(line[1] == '!'){
         get_command_at(curr_cmd_id-1, line, history, curr_cmd_id);
       }
