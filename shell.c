@@ -143,7 +143,6 @@ int main(void) {
         skip_exec = true;
       }
 
-
       if(skip_exec == false){
         //TODO: refactor execution
         /*--------------------------------------*/
@@ -174,10 +173,8 @@ int main(void) {
           curr_cmd_id, line_cpy, exec_time);
       }
       // debug_print_history(history, curr_cmd_id+1);
-
+      curr_cmd_id++;
     }
-    //TODO: Don't increment if blank line; check skip_exec?
-    curr_cmd_id++;
   }
 
     return 0;
