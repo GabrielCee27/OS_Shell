@@ -88,8 +88,18 @@ void parse_cmd_line(char *line, char **cmd_line) {
   cmd_line[i] = (char *) NULL;
 }
 
+void sigint_handler(int signo) {
+  // signal(SIGINT, SIG_IGN);
+  printf("\nnewline");
+  fflush(stdout);
+  //TODO: terminate child process only
+}
+
 int main(void) {
   double start;
+
+  // signal(SIGINT, SIG_IGN);
+  // signal(SIGINT, sigint_handler);
 
   while(true){
 
