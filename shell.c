@@ -89,17 +89,22 @@ void parse_cmd_line(char *line, char **cmd_line) {
 }
 
 void sigint_handler(int signo) {
-  // signal(SIGINT, SIG_IGN);
-  printf("\nnewline");
+  printf("\n");
   fflush(stdout);
-  //TODO: terminate child process only
+  int status;
+  pid_t pid = getpid();
+
+  waitpid(pid, &status, 0);
+  // printf("status: %d\n", status);
+  // fflush(stdout);
+  if(status == 0)
+    print_prompt();
 }
 
 int main(void) {
   double start;
 
-  // signal(SIGINT, SIG_IGN);
-  // signal(SIGINT, sigint_handler);
+  signal(SIGINT, sigint_handler);
 
   while(true){
 
