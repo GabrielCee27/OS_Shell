@@ -72,14 +72,16 @@ void clean_exit(void){
 }
 
 void parse_cmd_line(char *line, char **cmd_line) {
-  //TODO: ignore lines beginning w/ #
-
   char regex[4] = " \t\n\r";
   char *token = strtok(line, regex);
 
   int i = 0;
   while(token != NULL){
-    cmd_line[i++] = token;
+    if(token[0] == '#')
+      cmd_line[i++] = (char *) NULL;
+    else
+      cmd_line[i++] = token;
+
     token = strtok(NULL, regex);
   }
   //execvp needs last element to be null
