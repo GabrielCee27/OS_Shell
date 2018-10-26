@@ -16,7 +16,20 @@
 
 struct history_entry *history [HIST_MAX];
 int curr_cmd_id = 0;
+pid_t p_pid;
 
+
+void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
+  char temp[cwd_len - homedir_len + 2];
+
+  temp[0] = '~';
+  int i = 1, k = homedir_len;
+  while(cwd[k] != '\0')
+    temp[i++] = cwd[k++];
+  temp[i] = '\0';
+
+  strcpy(cwd, temp);
+}
 
 struct tm *print_prompt(void){
 
@@ -24,27 +37,15 @@ struct tm *print_prompt(void){
   char hostname[HOST_NAME_MAX];
   gethostname(hostname, HOST_NAME_MAX);
 
-  //TODO: refactor get_cwd
   char cwd[256];
-  /*--------------------------------------*/
   getcwd(cwd, sizeof(cwd));
 
   char *homedir = getenv("HOME");
   int homedir_len = strlen(homedir);
-  if(strncmp(homedir, cwd, homedir_len) == 0){
 
-    int temp_len = strlen(cwd) - homedir_len + 2;
-    char temp[temp_len];
-
-    temp[0] = '~';
-    int i = 1, k = homedir_len;
-    while(cwd[k] != '\0')
-      temp[i++] = cwd[k++];
-    temp[i] = '\0';
-
-    strcpy(cwd, temp);
-  }
-  /*--------------------------------------*/
+  /* Check if in home dir */
+  if(strncmp(homedir, cwd, homedir_len) == 0)
+    homedir_replace(cwd, strlen(cwd), homedir_len);
 
   time_t now = time(NULL);
   struct tm *now_struct = localtime(&now);
@@ -57,7 +58,7 @@ struct tm *print_prompt(void){
 }
 
 void cd_to(char *path){
-  if (path == NULL)
+  if(path == NULL)
     path = getenv("HOME");
 
   if(chdir(path) == -1)
@@ -81,7 +82,6 @@ void parse_cmd_line(char *line, char **cmd_line) {
       cmd_line[i++] = (char *) NULL;
     else
       cmd_line[i++] = token;
-
     token = strtok(NULL, regex);
   }
   //execvp needs last element to be null
@@ -92,11 +92,8 @@ void sigint_handler(int signo) {
   printf("\n");
   fflush(stdout);
   int status;
-  pid_t pid = getpid();
-
-  waitpid(pid, &status, 0);
-  // printf("status: %d\n", status);
-  // fflush(stdout);
+  //non-blocking call to check if a child is running
+  waitpid(p_pid, &status, 0);
   if(status == 0)
     print_prompt();
 }
@@ -105,6 +102,8 @@ int main(void) {
   double start;
 
   signal(SIGINT, sigint_handler);
+
+  p_pid = getpid();
 
   while(true){
 
@@ -184,12 +183,10 @@ int main(void) {
         history[curr_cmd_id] = new_history_entry(curr_time->tm_hour, curr_time->tm_min,
           curr_cmd_id, line_cpy, exec_time);
       }
-      else { //overwrite an existing struct
-        // printf("Overwiting at %d\n", curr_cmd_id % HIST_MAX);
+      else { //overwrite an existing entry
         overwrite_history_entry(history[curr_cmd_id % HIST_MAX], curr_time->tm_hour, curr_time->tm_min,
           curr_cmd_id, line_cpy, exec_time);
       }
-      // debug_print_history(history, curr_cmd_id+1);
       curr_cmd_id++;
     }
   }
