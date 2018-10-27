@@ -85,6 +85,11 @@ void parse_cmd_line(char *line, char **cmd_line) {
   }
   //execvp needs last element to be null
   cmd_line[i] = (char *) NULL;
+
+  if(strcmp(cmd_line[i-1], "&") == 0) {
+    //TODO:
+    printf("Should run in background\n");
+  }
 }
 
 void sigint_handler(int signo) {
@@ -98,6 +103,9 @@ void sigint_handler(int signo) {
 }
 
 void fork_exec(char **cmd_line) {
+
+  // printf("Last arg: %s\n", cmd_line[]);
+
   pid_t pid = fork();
   // printf("pid: %d\n", pid);
   if(pid == 0){ //child
@@ -110,6 +118,9 @@ void fork_exec(char **cmd_line) {
     wait(&status); //waits for a child to finish; Returns child pid
     printf("Child exited. Status: %d\n", status);
   }
+}
+
+void rec_fork_exec(char **cmd_line) {
 }
 
 int main(void) {
@@ -162,7 +173,7 @@ int main(void) {
         skip_exec = true;
       }
 
-      if(skip_exec == false){
+      if(!skip_exec){
         fork_exec(cmd_line);
       }
 
