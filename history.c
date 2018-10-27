@@ -64,7 +64,7 @@ void overwrite_history_entry(struct history_entry *entry, int h, int m, int curr
 //TODO:
 void get_command_at(int target_id, char *cmd_dest, struct history_entry **history, int curr_cmd_id){
 
-  debug_print_history(history, curr_cmd_id);
+  // debug_print_history(history, curr_cmd_id);
 
   if(target_id >= curr_cmd_id || (target_id < curr_cmd_id - HIST_MAX && target_id >= 0)){
     printf("The command you are trying to access is out of range!\n");

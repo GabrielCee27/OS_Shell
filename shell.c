@@ -18,7 +18,6 @@ struct history_entry *history [HIST_MAX];
 int curr_cmd_id = 0;
 pid_t p_pid;
 
-
 void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
   char temp[cwd_len - homedir_len + 2];
 
@@ -72,22 +71,6 @@ void clean_exit(void){
   exit(0);
 }
 
-void hist_exec(char *line) {
-  if(line[1] == '!'){
-    get_command_at(curr_cmd_id-1, line, history, curr_cmd_id);
-  }
-  else {
-    line = &(line[1]); //rm !
-    if(isdigit(line[0]) != 0){
-      get_command_at(atoi(line), line, history, curr_cmd_id);
-    }
-    else {
-      //TODO:
-      get_last_cmd_of(line, history, curr_cmd_id);
-    }
-  }
-}
-
 void parse_cmd_line(char *line, char **cmd_line) {
   char regex[4] = " \t\n\r";
   char *token = strtok(line, regex);
@@ -115,13 +98,13 @@ void sigint_handler(int signo) {
 }
 
 int main(void) {
-  double start;
 
   signal(SIGINT, sigint_handler);
 
   p_pid = getpid();
 
   while(true){
+    // double start;
 
     struct tm *curr_time = print_prompt();
 
@@ -130,25 +113,14 @@ int main(void) {
     getline(&line, &line_size, stdin);
 
     /* Checking for history execution */
-    if(line[0] == '!'){
-      //TODO:
-      // hist_exec(line);
-      /* ------------------------------------------------------ */
-
-      if(line[1] == '!'){
+    if(line[0] == '!' && strlen(line) > 2){
+      line = &(line[1]); //rm !
+      if(line[0] == '!')
         get_command_at(curr_cmd_id-1, line, history, curr_cmd_id);
-      }
-      else {
-        line = &(line[1]); //rm !
-        if(isdigit(line[0]) != 0){
-          get_command_at(atoi(line), line, history, curr_cmd_id);
-        }
-        else {
-          //TODO:
-          get_last_cmd_of(line, history, curr_cmd_id);
-        }
-      }
-      /* ------------------------------------------------------ */
+      else if(isdigit(line[0]) != 0)
+        get_command_at(atoi(line), line, history, curr_cmd_id);
+      else
+        get_last_cmd_of(line, history, curr_cmd_id);
     }
 
     char line_cpy[line_size];
@@ -157,11 +129,11 @@ int main(void) {
 
     //TODO:research ARG_MAX to find the max num of
     // args possible for a command
-    char *cmd_line[10];
+    char *cmd_line[100];
     parse_cmd_line(line, cmd_line);
 
     if(cmd_line[0] != NULL){
-      start = get_time();
+      double start = get_time();
 
       /* Checking for built-ins */
       bool skip_exec = false;
@@ -185,7 +157,7 @@ int main(void) {
         if(pid == 0){ //child
           printf("Child Executing: %s\n", line_cpy);
           if(execvp(cmd_line[0], cmd_line) < 0) //checks if failed
-            exit(0);
+            exit(0); //cleans up any failed children
         }
         else { //parent
           int status;
