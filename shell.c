@@ -97,6 +97,21 @@ void sigint_handler(int signo) {
     print_prompt();
 }
 
+void fork_exec(char **cmd_line) {
+  pid_t pid = fork();
+  // printf("pid: %d\n", pid);
+  if(pid == 0){ //child
+    // printf("Child Executing: %s\n", line_cpy);
+    if(execvp(cmd_line[0], cmd_line) < 0) //checks if failed
+      exit(0); //cleans up any failed children
+  }
+  else { //parent
+    int status;
+    wait(&status); //waits for a child to finish; Returns child pid
+    printf("Child exited. Status: %d\n", status);
+  }
+}
+
 int main(void) {
 
   signal(SIGINT, sigint_handler);
@@ -104,7 +119,6 @@ int main(void) {
   p_pid = getpid();
 
   while(true){
-    // double start;
 
     struct tm *curr_time = print_prompt();
 
@@ -115,11 +129,11 @@ int main(void) {
     /* Checking for history execution */
     if(line[0] == '!' && strlen(line) > 2){
       line = &(line[1]); //rm !
-      if(line[0] == '!')
+      if(line[0] == '!') //exec last command
         get_command_at(curr_cmd_id-1, line, history, curr_cmd_id);
       else if(isdigit(line[0]) != 0)
         get_command_at(atoi(line), line, history, curr_cmd_id);
-      else
+      else //get the latest call of command
         get_last_cmd_of(line, history, curr_cmd_id);
     }
 
@@ -128,7 +142,6 @@ int main(void) {
     // printf("-> %s", line);
 
     //TODO:research ARG_MAX to find the max num of
-    // args possible for a command
     char *cmd_line[100];
     parse_cmd_line(line, cmd_line);
 
@@ -150,21 +163,7 @@ int main(void) {
       }
 
       if(skip_exec == false){
-        //TODO: refactor execution
-        /*--------------------------------------*/
-        pid_t pid = fork();
-        // printf("pid: %d\n", pid);
-        if(pid == 0){ //child
-          printf("Child Executing: %s\n", line_cpy);
-          if(execvp(cmd_line[0], cmd_line) < 0) //checks if failed
-            exit(0); //cleans up any failed children
-        }
-        else { //parent
-          int status;
-          wait(&status); //waits for a child to finish; Returns child pid
-          printf("Child exited. Status: %d\n", status);
-        }
-        /*--------------------------------------*/
+        fork_exec(cmd_line);
       }
 
       double exec_time = get_time() - start;

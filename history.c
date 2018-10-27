@@ -1,5 +1,4 @@
 #include "history.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,18 +14,12 @@ void debug_print_history(struct history_entry **history, int curr_cmd_id){
 }
 
 void print_history(struct history_entry **history, int curr_cmd_id) {
-  // debug_print_history(history, curr_cmd_id);
-
   int i = 0, count, num_entries = curr_cmd_id;
 
   if(curr_cmd_id >= HIST_MAX){
     i = (curr_cmd_id % HIST_MAX);
     num_entries = HIST_MAX;
   }
-
-  // printf("curr_cmd_id: %d\n", curr_cmd_id);
-  // printf("Starting at: %d\n", i);
-  // printf("Num of elemens: %d\n", num_entries);
 
   for(count = 0; count < num_entries; count++){
     if(i == HIST_MAX)
@@ -61,23 +54,16 @@ void overwrite_history_entry(struct history_entry *entry, int h, int m, int curr
     strcpy(entry->command, command_line);
   }
 
-//TODO:
 void get_command_at(int target_id, char *cmd_dest, struct history_entry **history, int curr_cmd_id){
-
-  // debug_print_history(history, curr_cmd_id);
-
   if(target_id >= curr_cmd_id || (target_id < curr_cmd_id - HIST_MAX && target_id >= 0)){
     printf("The command you are trying to access is out of range!\n");
     //TODO: Error handle
     return;
   }
-
   strcpy(cmd_dest, history[target_id % HIST_MAX]->command);
 }
 
 void get_last_cmd_of(char *target_cmd, struct history_entry **history, int curr_cmd_id){
-  // debug_print_history(history, curr_cmd_id);
-
   int i = curr_cmd_id - 1, count, num_entries = curr_cmd_id;
 
   if(curr_cmd_id >= HIST_MAX){
@@ -98,6 +84,6 @@ void get_last_cmd_of(char *target_cmd, struct history_entry **history, int curr_
   }
 
   printf("Did not find command in history\n");
-  strcpy(target_cmd, ""); //blank line should be handled in shell
+  strcpy(target_cmd, ""); //blank should be handled in shell
 
 }
