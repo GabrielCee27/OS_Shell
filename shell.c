@@ -102,7 +102,7 @@ void sigint_handler(int signo) {
     print_prompt();
 }
 
-void fork_exec(char **cmd_line) {
+void exec(char **cmd_line) {
   // printf("Last arg: %s\n", cmd_line[]);
 
   pid_t pid = fork();
@@ -119,36 +119,55 @@ void fork_exec(char **cmd_line) {
   }
 }
 
-void rec_fork_exec(char **cmd_line) {
+void rec_exec(char **cmd_line) {
   int i = 0;
-  char *nxt_cmd = NULL;
+  char **nxt_cmd = NULL;
   while(cmd_line[i] != (char *) NULL){
-    printf("cmd_line[%d]: %s\n", i, cmd_line[i]);
     if(strcmp(cmd_line[i], "|") == 0){
-      printf("Found pipe!\n");
       cmd_line[i] = (char *) NULL;
-      nxt_cmd = cmd_line[i+1];
+      nxt_cmd = &(cmd_line[i+1]);
       break;
     }
     i++;
   }
 
   if(nxt_cmd == NULL) {
-    if(execvp(cmd_line[0], cmd_line) < 0) //checks if failed
-      exit(0); //cleans up any failed children
+    if(execvp(cmd_line[0], cmd_line) < 0)
+      exit(0);
   }
 
-  /* Pipe to next cmd */
-  //1. pipe
-  //2. fork
-  //3. if child
-  //  a. close and open appropriate pipes
-  //  b. execute
-  //4. else
-  //  a. if nxt_cmd not null
+  //TODO: set up pipes
+  int p_fd[2];
+  if(pipe(p_fd) == -1){
+    perror("pipe");
+    // return EXIT_FAILURE;
+    return;
+  }
 
-  printf("nxt_cmd: %s\n", nxt_cmd);
-  exit(0);
+  pid_t pid = fork();
+  if(pid == 0){ //child
+    //closes read pipe and redirects stdout to write pipe
+    close(p_fd[0]);
+    if(dup2(p_fd[1], STDOUT_FILENO) == -1){
+      perror("dup2");
+      // return 1;
+      return;
+    }
+
+    if(execvp(cmd_line[0], cmd_line) < 0)
+      exit(0);
+  }
+  else { //parent
+    //closes write pipe and redirects stdin to read pipe
+    close(p_fd[1]);
+    if(dup2(p_fd[0], STDIN_FILENO) == -1){
+      perror("dup2");
+      // return 1;
+      return;
+    }
+    rec_exec(nxt_cmd);
+  }
+
 }
 
 int main(void) {
@@ -202,14 +221,14 @@ int main(void) {
       }
 
       if(!skip_exec){
-        // fork_exec(cmd_line);
+        // exec(cmd_line);
 
         /*TODO: rec fork */
         pid_t pid = fork();
         // printf("pid: %d\n", pid);
         if(pid == 0){ //child
           // printf("Child Executing: %s\n", line_cpy);
-          rec_fork_exec(cmd_line);
+          rec_exec(cmd_line);
         }
         else { //parent
           int status;
