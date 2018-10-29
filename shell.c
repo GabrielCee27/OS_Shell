@@ -56,6 +56,7 @@ struct tm *print_prompt(void){
   return now_struct;
 }
 
+//TODO: error handle to not crash shell
 void cd_to(char *path){
   if(path == NULL)
     path = getenv("HOME");
@@ -71,7 +72,7 @@ void clean_exit(void){
   exit(0);
 }
 
-void parse_cmd_line(char *line, char **cmd_line) {
+void parse_cmd_line(char *line, char **cmd_line, bool *background) {
   char regex[4] = " \t\n\r";
   char *token = strtok(line, regex);
 
@@ -86,10 +87,13 @@ void parse_cmd_line(char *line, char **cmd_line) {
   //execvp needs last element to be null
   cmd_line[i] = (char *) NULL;
 
-  if(strcmp(cmd_line[i-1], "&") == 0) {
-    //TODO:
-    printf("Should run in background\n");
-  }
+  //TODO: background
+  // if(strcmp(cmd_line[i-1], "&") == 0) {
+  //   //TODO:
+  //   printf("cmd_line at %d is now null\n", i-1);
+  //   cmd_line[i-1] = (char *) NULL;
+  //   *background = true;
+  // }
 }
 
 void sigint_handler(int signo) {
@@ -102,41 +106,57 @@ void sigint_handler(int signo) {
     print_prompt();
 }
 
-void exec(char **cmd_line) {
-  // printf("Last arg: %s\n", cmd_line[]);
+// void exec(char **cmd_line) {
+//   // printf("Last arg: %s\n", cmd_line[]);
+//
+//   pid_t pid = fork();
+//   // printf("pid: %d\n", pid);
+//   if(pid == 0){ //child
+//     // printf("Child Executing: %s\n", line_cpy);
+//     if(execvp(cmd_line[0], cmd_line) < 0) //checks if failed
+//       exit(0); //cleans up any failed children
+//   }
+//   else { //parent
+//     int status;
+//     wait(&status); //waits for a child to finish; Returns child pid
+//     printf("Child exited. Status: %d\n", status);
+//   }
+// }
 
-  pid_t pid = fork();
-  // printf("pid: %d\n", pid);
-  if(pid == 0){ //child
-    // printf("Child Executing: %s\n", line_cpy);
-    if(execvp(cmd_line[0], cmd_line) < 0) //checks if failed
-      exit(0); //cleans up any failed children
-  }
-  else { //parent
-    int status;
-    wait(&status); //waits for a child to finish; Returns child pid
-    printf("Child exited. Status: %d\n", status);
-  }
-}
-
+//TODO: Error handle
 void rec_exec(char **cmd_line) {
   int i = 0;
   char **nxt_cmd = NULL;
+  char *output_file = NULL;
   while(cmd_line[i] != (char *) NULL){
+    // printf("cmd_line[i]: %s\n", cmd_line[i]);
     if(strcmp(cmd_line[i], "|") == 0){
       cmd_line[i] = (char *) NULL;
       nxt_cmd = &(cmd_line[i+1]);
       break;
     }
+    else if(strcmp(cmd_line[i], ">") == 0){
+      cmd_line[i] = (char *) NULL;
+      output_file = cmd_line[i+1];
+      break;
+    }
     i++;
   }
 
-  if(nxt_cmd == NULL) {
+  if(nxt_cmd == NULL) { //final cmd
+    // printf("Final command\n");
+    if(output_file != NULL){
+      int output_fd = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+      if(output_fd != -1){
+        dup2(output_fd, STDOUT_FILENO);
+      }
+    }
+
     if(execvp(cmd_line[0], cmd_line) < 0)
       exit(0);
   }
 
-  //TODO: set up pipes
+  //set up pipes
   int p_fd[2];
   if(pipe(p_fd) == -1){
     perror("pipe");
@@ -155,7 +175,7 @@ void rec_exec(char **cmd_line) {
     }
 
     if(execvp(cmd_line[0], cmd_line) < 0)
-      exit(0);
+    exit(0);
   }
   else { //parent
     //closes write pipe and redirects stdin to read pipe
@@ -201,7 +221,8 @@ int main(void) {
 
     //TODO:research ARG_MAX to find the max num of
     char *cmd_line[100];
-    parse_cmd_line(line, cmd_line);
+    bool background = false;
+    parse_cmd_line(line, cmd_line, &background);
 
     if(cmd_line[0] != NULL){
       double start = get_time();
@@ -221,19 +242,25 @@ int main(void) {
       }
 
       if(!skip_exec){
-        // exec(cmd_line);
-
-        /*TODO: rec fork */
         pid_t pid = fork();
-        // printf("pid: %d\n", pid);
         if(pid == 0){ //child
-          // printf("Child Executing: %s\n", line_cpy);
+          //print out cmd line
+          // int i = 0;
+          // while(cmd_line[i] != (char *) NULL){
+          //   printf("cmd_line[%d]: %s\n", i, cmd_line[i]);
+          //   fflush(stdout);
+          //   i++;
+          // }
           rec_exec(cmd_line);
         }
         else { //parent
-          int status;
-          wait(&status); //waits for a child to finish; Returns child pid
-          printf("Child exited. Status: %d\n", status);
+          //TODO: Don't wait if a background cmd
+          //BUG: Not exiting on itself when a background process
+          if(!background){
+            int status;
+            wait(&status); //waits for a child to finish; Returns child pid
+            printf("Child exited. Status: %d\n", status);
+          }
         }
       }
 
