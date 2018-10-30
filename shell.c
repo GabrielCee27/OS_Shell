@@ -87,13 +87,12 @@ void parse_cmd_line(char *line, char **cmd_line, bool *background) {
   //execvp needs last element to be null
   cmd_line[i] = (char *) NULL;
 
-  //TODO: background
-  // if(strcmp(cmd_line[i-1], "&") == 0) {
-  //   //TODO:
-  //   printf("cmd_line at %d is now null\n", i-1);
-  //   cmd_line[i-1] = (char *) NULL;
-  //   *background = true;
-  // }
+  //Run in background
+  if(i > 0 && strcmp(cmd_line[i-1], "&") == 0) {
+    //TODO:
+    cmd_line[i-1] = (char *) NULL;
+    *background = true;
+  }
 }
 
 void sigint_handler(int signo) {
@@ -122,6 +121,14 @@ void sigint_handler(int signo) {
 //     printf("Child exited. Status: %d\n", status);
 //   }
 // }
+
+void print_cmds(char **cmd_line){
+  int i = 0;
+  while(cmd_line[i] != (char *) NULL){
+    printf("cmd_line[%d]: %s\n", i, cmd_line[i]);
+    i++;
+  }
+}
 
 //TODO: Error handle
 void rec_exec(char **cmd_line) {
@@ -190,6 +197,23 @@ void rec_exec(char **cmd_line) {
 
 }
 
+//TODO: Pass vars needed to update history
+void background_exec(char **cmd_line) {
+  pid_t pid = fork();
+  if(pid == 0) {
+    rec_exec(cmd_line);
+  }
+  else {
+    //TODO: Place command in history when done
+
+    int status;
+    // wait(&status);
+    waitpid(pid, &status, 0);
+    printf("Child background process is done!\n");
+    exit(0);
+  }
+}
+
 int main(void) {
 
   signal(SIGINT, sigint_handler);
@@ -240,40 +264,46 @@ int main(void) {
         cd_to(cmd_line[1]);
         skip_exec = true;
       }
+      else if(strcmp(cmd_line[0], "jobs") == 0){
+        //TODO: Print out background jobs
+        printf("Should print out background jobs\n");
+      }
 
       if(!skip_exec){
         pid_t pid = fork();
         if(pid == 0){ //child
-          //print out cmd line
-          // int i = 0;
-          // while(cmd_line[i] != (char *) NULL){
-          //   printf("cmd_line[%d]: %s\n", i, cmd_line[i]);
-          //   fflush(stdout);
-          //   i++;
-          // }
-          rec_exec(cmd_line);
+          print_cmds(cmd_line);
+
+          if(background) {
+            background_exec(cmd_line);
+          }
+          else {
+            rec_exec(cmd_line);
+          }
         }
         else { //parent
-          //TODO: Don't wait if a background cmd
-          //BUG: Not exiting on itself when a background process
-          if(!background){
+          //BUG: stdout is appearing on next prompt after a background job stdouts
+          if(!background) {
             int status;
             wait(&status); //waits for a child to finish; Returns child pid
             printf("Child exited. Status: %d\n", status);
+          }
+          else {
+            printf("Not waiting for backgound process\n");
           }
         }
       }
 
       double exec_time = get_time() - start;
 
-      if(curr_cmd_id < HIST_MAX){
-        history[curr_cmd_id] = new_history_entry(curr_time->tm_hour, curr_time->tm_min,
-          curr_cmd_id, line_cpy, exec_time);
-      }
-      else { //overwrite an existing entry
-        overwrite_history_entry(history[curr_cmd_id % HIST_MAX], curr_time->tm_hour, curr_time->tm_min,
-          curr_cmd_id, line_cpy, exec_time);
-      }
+      // if(curr_cmd_id < HIST_MAX){
+      //   history[curr_cmd_id] = new_history_entry(curr_time->tm_hour, curr_time->tm_min,
+      //     curr_cmd_id, line_cpy, exec_time);
+      // }
+      // else { //overwrite an existing entry
+      //   overwrite_history_entry(history[curr_cmd_id % HIST_MAX], curr_time->tm_hour, curr_time->tm_min,
+      //     curr_cmd_id, line_cpy, exec_time);
+      // }
       curr_cmd_id++;
     }
   }
