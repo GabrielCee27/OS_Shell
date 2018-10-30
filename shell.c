@@ -21,6 +21,19 @@ int curr_bg_pid = 0;
 struct history_entry *background_jobs[100];
 pid_t p_pid;
 
+
+/*
+ * Function: homedir_replace
+ * --------------------------------------------------------------
+ * Replaces the home directory part of the string with a '~'
+ *
+ * cwd: string of current working directory
+ *
+ * cwd_len: length of cwd
+ *
+ * homedir_len: length of home directory string
+ *
+*/
 void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
   char temp[cwd_len - homedir_len + 2];
 
@@ -33,6 +46,14 @@ void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
   strcpy(cwd, temp);
 }
 
+
+/*
+ * Function: print_prompt
+ * --------------------------------------------------------------
+ * Populates the variables needed to print the prompt
+ *
+ * returns: time when prompt was printed
+*/
 struct tm *print_prompt(void){
 
   char *user = getlogin();
@@ -75,6 +96,17 @@ void clean_exit(void){
   exit(0);
 }
 
+/*
+ * Function: parse_cmd_line
+ * --------------------------------------------------------------
+ * Parses given command line
+ *
+ * line: line to parse
+ *
+ * cmd_line: arguments parsed from line
+ *
+ * background: to tell whether the process should run in the background
+*/
 void parse_cmd_line(char *line, char **cmd_line, bool *background) {
   char regex[4] = " \t\n\r";
   char *token = strtok(line, regex);
@@ -98,6 +130,12 @@ void parse_cmd_line(char *line, char **cmd_line, bool *background) {
   }
 }
 
+/*
+ * Function: sigint_handler
+ * --------------------------------------------------------------
+ * Doesn't shell if ctr+C is pressed
+ *
+*/
 void sigint_handler(int signo) {
   printf("\n");
   fflush(stdout);
