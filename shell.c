@@ -16,6 +16,7 @@
 
 struct history_entry *history [HIST_MAX];
 int curr_cmd_id = 0;
+pid_t background_pids[100];
 pid_t p_pid;
 
 void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
@@ -197,6 +198,14 @@ void rec_exec(char **cmd_line) {
 
 }
 
+// void sigchld_handler(int signo) {
+//   //TODO:
+//   printf("sigchld handler called\n");
+//   int status;
+//   pid_t wait = waitpid(-1, &status, 0);
+//   printf("Done waiting. status is: %d\n", status);
+// }
+
 //TODO: Pass vars needed to update history
 void background_exec(char **cmd_line) {
   pid_t pid = fork();
@@ -207,7 +216,6 @@ void background_exec(char **cmd_line) {
     //TODO: Place command in history when done
 
     int status;
-    // wait(&status);
     waitpid(pid, &status, 0);
     printf("Child background process is done!\n");
     exit(0);
@@ -239,8 +247,8 @@ int main(void) {
         get_last_cmd_of(line, history, curr_cmd_id);
     }
 
-    char line_cpy[line_size];
-    strcpy(line_cpy, line); //use to populate history_entry later
+    char line_cpy[line_size]; //use to populate history_entry
+    strcpy(line_cpy, line);
     // printf("-> %s", line);
 
     //TODO:research ARG_MAX to find the max num of
@@ -267,6 +275,7 @@ int main(void) {
       else if(strcmp(cmd_line[0], "jobs") == 0){
         //TODO: Print out background jobs
         printf("Should print out background jobs\n");
+        skip_exec = true;
       }
 
       if(!skip_exec){
@@ -282,14 +291,14 @@ int main(void) {
           }
         }
         else { //parent
-          //BUG: stdout is appearing on next prompt after a background job stdouts
           if(!background) {
             int status;
-            wait(&status); //waits for a child to finish; Returns child pid
+            // wait(&status); //waits for a child to finish; Returns child pid
+
+            //gonna wait on the process that just got forked instead of being interupted
+            //by a background process exiting
+            waitpid(pid, &status, 0);
             printf("Child exited. Status: %d\n", status);
-          }
-          else {
-            printf("Not waiting for backgound process\n");
           }
         }
       }
