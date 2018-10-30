@@ -50,7 +50,7 @@ void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
 /*
  * Function: print_prompt
  * --------------------------------------------------------------
- * Populates the variables needed to print the prompt
+ * Retries the info needed to print the prompt
  *
  * returns: time when prompt was printed
 */
@@ -122,9 +122,8 @@ void parse_cmd_line(char *line, char **cmd_line, bool *background) {
   //execvp needs last element to be null
   cmd_line[i] = (char *) NULL;
 
-  //Run in background
+  //Check if the process is going to run in background
   if(i > 0 && strcmp(cmd_line[i-1], "&") == 0) {
-    //TODO:
     cmd_line[i-1] = (char *) NULL;
     *background = true;
   }
@@ -133,8 +132,9 @@ void parse_cmd_line(char *line, char **cmd_line, bool *background) {
 /*
  * Function: sigint_handler
  * --------------------------------------------------------------
- * Doesn't shell if ctr+C is pressed
+ * Doesn't exit shell if ctr+C is pressed
  *
+ * signo: signal number
 */
 void sigint_handler(int signo) {
   printf("\n");
@@ -176,6 +176,8 @@ void rec_exec(char **cmd_line) {
   int i = 0;
   char **nxt_cmd = NULL;
   char *output_file = NULL;
+
+  /* --------------------------------- */
   while(cmd_line[i] != (char *) NULL){
     // printf("cmd_line[i]: %s\n", cmd_line[i]);
     if(strcmp(cmd_line[i], "|") == 0){
@@ -190,6 +192,7 @@ void rec_exec(char **cmd_line) {
     }
     i++;
   }
+  /* --------------------------------- */
 
   if(nxt_cmd == NULL) { //final cmd
     // printf("Final command\n");
@@ -245,7 +248,7 @@ void sigchld_handler(int signo) {
   int status;
   // pid_t wait = waitpid(-1, &status, 0);
   pid_t w_pid = wait(&status);
-  printf("child done; pid: %d\n", wait);
+  // printf("child done; pid: %d\n", wait);
 }
 
 //TODO: Pass vars needed to update history
@@ -276,7 +279,7 @@ void background_exec(char **cmd_line, double start_time) {
 int main(void) {
 
   signal(SIGINT, sigint_handler);
-  // signal(SIGCHLD, sigchld_handler);
+  signal(SIGCHLD, sigchld_handler);
 
   p_pid = getpid();
 
@@ -349,15 +352,10 @@ int main(void) {
           if(!background) {
             int status;
 
-            // wait(&status); //waits for a child to finish; Returns child pid
-
             //gonna wait on the process that just got forked instead of being interupted
             //by a background process exiting
-          // pid_t wait_pid = waitpid(pid, &status, 0);
-          // if(wait_pid == pid){
-          //   printf("same!\n");
-          // }
-            printf("Child exited. Status: %d\n", status);
+            pid_t wait_pid = waitpid(pid, &status, 0);
+            printf("In parent: Child exited. Status: %d\n", status);
           }
           else {
             background_pids[curr_bg_pid++] = pid;
