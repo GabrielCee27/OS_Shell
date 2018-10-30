@@ -17,6 +17,8 @@
 struct history_entry *history [HIST_MAX];
 int curr_cmd_id = 0;
 pid_t background_pids[100];
+int curr_bg_pid = 0;
+struct history_entry *background_jobs[100];
 pid_t p_pid;
 
 void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
@@ -198,16 +200,19 @@ void rec_exec(char **cmd_line) {
 
 }
 
-// void sigchld_handler(int signo) {
-//   //TODO:
-//   printf("sigchld handler called\n");
-//   int status;
-//   pid_t wait = waitpid(-1, &status, 0);
-//   printf("Done waiting. status is: %d\n", status);
-// }
+//only gets called when a child exits
+void sigchld_handler(int signo) {
+  //TODO: if non-background, unblock prompt
+  printf("sigchld handler called\n");
+  int status;
+  // pid_t wait = waitpid(-1, &status, 0);
+  pid_t w_pid = wait(&status);
+  printf("child done; pid: %d\n", wait);
+}
 
 //TODO: Pass vars needed to update history
-void background_exec(char **cmd_line) {
+void background_exec(char **cmd_line, double start_time) {
+
   pid_t pid = fork();
   if(pid == 0) {
     rec_exec(cmd_line);
@@ -218,6 +223,14 @@ void background_exec(char **cmd_line) {
     int status;
     waitpid(pid, &status, 0);
     printf("Child background process is done!\n");
+
+    // printf("Should update at: %d\n", curr_cmd_id % HIST_MAX);
+
+    // struct history_entry *entry = history[curr_cmd_id % HIST_MAX];
+    // printf("entry: %s\n", entry->command);
+
+    print_history(history, curr_cmd_id+1);
+
     exit(0);
   }
 }
@@ -225,6 +238,7 @@ void background_exec(char **cmd_line) {
 int main(void) {
 
   signal(SIGINT, sigint_handler);
+  // signal(SIGCHLD, sigchld_handler);
 
   p_pid = getpid();
 
@@ -281,30 +295,43 @@ int main(void) {
       if(!skip_exec){
         pid_t pid = fork();
         if(pid == 0){ //child
-          print_cmds(cmd_line);
+          // print_cmds(cmd_line);
 
-          if(background) {
-            background_exec(cmd_line);
-          }
-          else {
-            rec_exec(cmd_line);
-          }
+          // if(background) {
+          //   background_exec(cmd_line, start);
+          // }
+          // else {
+          //   rec_exec(cmd_line);
+          // }
+
+
+          rec_exec(cmd_line);
         }
         else { //parent
           if(!background) {
             int status;
+
             // wait(&status); //waits for a child to finish; Returns child pid
 
             //gonna wait on the process that just got forked instead of being interupted
             //by a background process exiting
-            waitpid(pid, &status, 0);
+          // pid_t wait_pid = waitpid(pid, &status, 0);
+          // if(wait_pid == pid){
+          //   printf("same!\n");
+          // }
             printf("Child exited. Status: %d\n", status);
+          }
+          else {
+            background_pids[curr_bg_pid++] = pid;
           }
         }
       }
 
       double exec_time = get_time() - start;
 
+      // if(background)
+      //   exec_time = 0;
+      //
       // if(curr_cmd_id < HIST_MAX){
       //   history[curr_cmd_id] = new_history_entry(curr_time->tm_hour, curr_time->tm_min,
       //     curr_cmd_id, line_cpy, exec_time);
