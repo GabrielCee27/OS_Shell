@@ -246,9 +246,18 @@ void sigchld_handler(int signo) {
   //TODO: if non-background, unblock prompt
   printf("sigchld handler called\n");
   int status;
-  // pid_t wait = waitpid(-1, &status, 0);
-  pid_t w_pid = wait(&status);
-  // printf("child done; pid: %d\n", wait);
+  pid_t w_pid = waitpid(-1, &status, WNOHANG);
+  // pid_t w_pid = waitpid(-1, &status, 0);
+  // pid_t w_pid = wait(&status);
+
+  if(w_pid == 0) {
+    printf("Not a background process\n");
+  }
+  else {
+    printf("Background process ended!\n");
+  }
+
+  printf("end of sigchld_handler; pid: %d; status: %d\n", w_pid, status);
 }
 
 //TODO: Pass vars needed to update history
@@ -358,6 +367,7 @@ int main(void) {
             printf("In parent: Child exited. Status: %d\n", status);
           }
           else {
+            printf("background pid: %d\n", pid);
             background_pids[curr_bg_pid++] = pid;
           }
         }
