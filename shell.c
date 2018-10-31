@@ -13,11 +13,14 @@
 
 #include "history.h"
 #include "timer.h"
+#include "background.h"
 
 struct history_entry *history [HIST_MAX];
 int curr_cmd_id = 0;
-pid_t background_pids[100];
-int curr_bg_pid = 0;
+// pid_t background_pids [100];
+struct background_entry *bg_list[BACKGROUND_MAX];
+int bg_count = 0;
+// int curr_bg_pid = 0;
 struct history_entry *background_jobs[100];
 pid_t p_pid;
 
@@ -244,18 +247,18 @@ void rec_exec(char **cmd_line) {
 //only gets called when a child exits
 void sigchld_handler(int signo) {
   //TODO: if non-background, unblock prompt
-  printf("sigchld handler called\n");
+  // printf("sigchld handler called\n");
   int status;
   pid_t w_pid = waitpid(-1, &status, WNOHANG);
   // pid_t w_pid = waitpid(-1, &status, 0);
   // pid_t w_pid = wait(&status);
 
-  if(w_pid == 0) {
-    printf("Not a background process\n");
-  }
-  else {
-    printf("Background process ended!\n");
-  }
+  // if(w_pid == 0) {
+  //   printf("Not a background process\n");
+  // }
+  // else {
+  //   printf("Background process ended!\n");
+  // }
 
   printf("end of sigchld_handler; pid: %d; status: %d\n", w_pid, status);
 }
@@ -342,8 +345,9 @@ int main(void) {
         skip_exec = true;
       }
 
+      pid_t pid = 0;
       if(!skip_exec){
-        pid_t pid = fork();
+        pid = fork();
         if(pid == 0){ //child
           // print_cmds(cmd_line);
 
@@ -364,29 +368,33 @@ int main(void) {
             //gonna wait on the process that just got forked instead of being interupted
             //by a background process exiting
             pid_t wait_pid = waitpid(pid, &status, 0);
-            printf("In parent: Child exited. Status: %d\n", status);
+            // printf("In parent: Child exited. Status: %d\n", status);
           }
           else {
-            printf("background pid: %d\n", pid);
-            background_pids[curr_bg_pid++] = pid;
+            // struct background_entry *bg_ptr = new_background_entry(pid, line_cpy, start);
+            // bg_list[bg_count++] = new_background_entry(pid, line_cpy, start);
           }
         }
       }
 
+      printf("Child pid: %d\n", pid);
+
       double exec_time = get_time() - start;
 
-      // if(background)
-      //   exec_time = 0;
-      //
-      // if(curr_cmd_id < HIST_MAX){
-      //   history[curr_cmd_id] = new_history_entry(curr_time->tm_hour, curr_time->tm_min,
-      //     curr_cmd_id, line_cpy, exec_time);
-      // }
-      // else { //overwrite an existing entry
-      //   overwrite_history_entry(history[curr_cmd_id % HIST_MAX], curr_time->tm_hour, curr_time->tm_min,
-      //     curr_cmd_id, line_cpy, exec_time);
-      // }
+      if(background)
+        exec_time = 0; //TODO: change to start
+
+      if(curr_cmd_id < HIST_MAX){
+        history[curr_cmd_id] = new_history_entry(pid, curr_time->tm_hour, curr_time->tm_min,
+          curr_cmd_id, line_cpy, exec_time);
+      }
+      else { //overwrite an existing entry
+        overwrite_history_entry(history[curr_cmd_id % HIST_MAX], pid, curr_time->tm_hour, curr_time->tm_min,
+          curr_cmd_id, line_cpy, exec_time);
+      }
+
       curr_cmd_id++;
+      // debug_print_history(history, curr_cmd_id);
     }
   }
 

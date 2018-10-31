@@ -7,7 +7,7 @@ void debug_print_history(struct history_entry **history, int curr_cmd_id){
   printf("debug print history: \n");
   int i;
   for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++){
-    printf("i: %d [%ld|%d:%d|%f] %s\n", i, history[i]->cmd_id, history[i]->hour, history[i]->min,
+    printf("i: %d | pid: %d [%ld|%d:%d|%f] %s\n", i, history[i]->pid, history[i]->cmd_id, history[i]->hour, history[i]->min,
     history[i]->run_time, history[i]->command);
   }
 
@@ -31,10 +31,11 @@ void print_history(struct history_entry **history, int curr_cmd_id) {
 }
 
 
-struct history_entry *new_history_entry(int h, int m, int curr_cmd_id, char *command_line,
+struct history_entry *new_history_entry(int p_id, int h, int m, int curr_cmd_id, char *command_line,
   double exec_time) {
   struct history_entry * hist_ptr = malloc(sizeof(struct history_entry));
 
+  hist_ptr->pid = p_id;
   hist_ptr->hour = h;
   hist_ptr->min = m;
   hist_ptr->cmd_id = curr_cmd_id;
@@ -44,9 +45,10 @@ struct history_entry *new_history_entry(int h, int m, int curr_cmd_id, char *com
   return hist_ptr;
 }
 
-void overwrite_history_entry(struct history_entry *entry, int h, int m, int curr_cmd_id, char *command_line,
+void overwrite_history_entry(struct history_entry *entry, int p_id, int h, int m, int curr_cmd_id, char *command_line,
   double exec_time){
 
+    entry->pid = p_id;
     entry->hour = h;
     entry->min = m;
     entry->cmd_id = curr_cmd_id;

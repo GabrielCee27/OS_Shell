@@ -1,10 +1,11 @@
 #ifndef _HISTORY_H_
 #define _HISTORY_H_
 
-// #define HIST_MAX 100
-#define HIST_MAX 5
+#define HIST_MAX 100
+// #define HIST_MAX 5
 
 struct history_entry {
+    int pid;
     unsigned long cmd_id;
     double run_time;
     char command[120];
@@ -23,6 +24,7 @@ void debug_print_history(
 );
 
 struct history_entry *new_history_entry (
+  int p_id,
   int h,
   int m,
   int command_count,
@@ -32,6 +34,7 @@ struct history_entry *new_history_entry (
 
 void overwrite_history_entry (
   struct history_entry *entry,
+  int p_id,
   int h,
   int m,
   int command_count,
