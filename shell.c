@@ -13,13 +13,10 @@
 
 #include "history.h"
 #include "timer.h"
-#include "background.h"
 
 struct history_entry *history [HIST_MAX];
 int curr_cmd_id = 0;
 // pid_t background_pids [100];
-struct background_entry *bg_list[BACKGROUND_MAX];
-int bg_count = 0;
 // int curr_bg_pid = 0;
 struct history_entry *background_jobs[100];
 pid_t p_pid;
@@ -250,15 +247,11 @@ void sigchld_handler(int signo) {
   // printf("sigchld handler called\n");
   int status;
   pid_t w_pid = waitpid(-1, &status, WNOHANG);
-  // pid_t w_pid = waitpid(-1, &status, 0);
-  // pid_t w_pid = wait(&status);
+  if(w_pid != 0) {
+    printf("bg child exited\n");
 
-  // if(w_pid == 0) {
-  //   printf("Not a background process\n");
-  // }
-  // else {
-  //   printf("Background process ended!\n");
-  // }
+
+  }
 
   printf("end of sigchld_handler; pid: %d; status: %d\n", w_pid, status);
 }
@@ -350,29 +343,17 @@ int main(void) {
         pid = fork();
         if(pid == 0){ //child
           // print_cmds(cmd_line);
-
-          // if(background) {
-          //   background_exec(cmd_line, start);
-          // }
-          // else {
-          //   rec_exec(cmd_line);
-          // }
-
-
           rec_exec(cmd_line);
         }
         else { //parent
           if(!background) {
             int status;
-
             //gonna wait on the process that just got forked instead of being interupted
             //by a background process exiting
             pid_t wait_pid = waitpid(pid, &status, 0);
             // printf("In parent: Child exited. Status: %d\n", status);
           }
           else {
-            // struct background_entry *bg_ptr = new_background_entry(pid, line_cpy, start);
-            // bg_list[bg_count++] = new_background_entry(pid, line_cpy, start);
           }
         }
       }
