@@ -87,5 +87,17 @@ void get_last_cmd_of(char *target_cmd, struct history_entry **history, int curr_
 
   printf("Did not find command in history\n");
   strcpy(target_cmd, ""); //blank should be handled in shell
+}
 
+struct history_entry * get_hist_w_pid(int t_pid, struct history_entry **history, int curr_cmd_id) {
+
+  printf("Looking for entry w/ pid: %d\n", t_pid);
+
+  int i;
+  for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++){
+    printf("%d pid: %d\n", i, history[i]->pid);
+    // if(history[i]->pid == t_pid)
+    //   return (history[i]);
+  }
+  return NULL;
 }

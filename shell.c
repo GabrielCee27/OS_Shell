@@ -14,11 +14,21 @@
 #include "history.h"
 #include "timer.h"
 
+#define BACKGROUND_MAX 100
+
+struct background_entry {
+  int pid;
+  char cmd[125];
+};
+
+
+/* Global variables */
 struct history_entry *history [HIST_MAX];
 int curr_cmd_id = 0;
-// pid_t background_pids [100];
-// int curr_bg_pid = 0;
-struct history_entry *background_jobs[100];
+
+struct background_entry *bg_list[BACKGROUND_MAX];
+int curr_bg = 0;
+
 pid_t p_pid;
 
 
@@ -241,45 +251,37 @@ void rec_exec(char **cmd_line) {
 
 }
 
+void print_bg_ls() {
+  printf("Background Jobs Currently Running:\n");
+  int i;
+  for(i = 0; i < curr_bg; i++){
+    if(bg_list[i] != NULL)
+      printf("%d: %s\n", bg_list[i]->pid, bg_list[i]->cmd);
+  }
+}
+
+void rm_bg_w_pid(int t_pid){
+  int i;
+  for(i = 0; i < curr_bg; i++){
+    if(bg_list[i]->pid == t_pid){
+      printf("Found a match!\n");
+      free(bg_list[i]);
+      bg_list[i] = NULL;
+    }
+  }
+}
+
 //only gets called when a child exits
 void sigchld_handler(int signo) {
-  //TODO: if non-background, unblock prompt
-  // printf("sigchld handler called\n");
   int status;
   pid_t w_pid = waitpid(-1, &status, WNOHANG);
-  if(w_pid != 0) {
-    printf("bg child exited\n");
-
-
+  if(w_pid != 0 && w_pid != -1) {
+    rm_bg_w_pid(w_pid);
   }
 
   printf("end of sigchld_handler; pid: %d; status: %d\n", w_pid, status);
 }
 
-//TODO: Pass vars needed to update history
-void background_exec(char **cmd_line, double start_time) {
-
-  pid_t pid = fork();
-  if(pid == 0) {
-    rec_exec(cmd_line);
-  }
-  else {
-    //TODO: Place command in history when done
-
-    int status;
-    waitpid(pid, &status, 0);
-    printf("Child background process is done!\n");
-
-    // printf("Should update at: %d\n", curr_cmd_id % HIST_MAX);
-
-    // struct history_entry *entry = history[curr_cmd_id % HIST_MAX];
-    // printf("entry: %s\n", entry->command);
-
-    print_history(history, curr_cmd_id+1);
-
-    exit(0);
-  }
-}
 
 int main(void) {
 
@@ -287,6 +289,10 @@ int main(void) {
   signal(SIGCHLD, sigchld_handler);
 
   p_pid = getpid();
+
+  // int i;
+  // for(i = 0; i < BACKGROUND_MAX; i++)
+  //   bg_list[i] = NULL;
 
   while(true){
 
@@ -309,7 +315,7 @@ int main(void) {
 
     char line_cpy[line_size]; //use to populate history_entry
     strcpy(line_cpy, line);
-    // printf("-> %s", line);
+    // printf("-> %s\n", line);
 
     //TODO:research ARG_MAX to find the max num of
     char *cmd_line[100];
@@ -333,8 +339,8 @@ int main(void) {
         skip_exec = true;
       }
       else if(strcmp(cmd_line[0], "jobs") == 0){
-        //TODO: Print out background jobs
-        printf("Should print out background jobs\n");
+        // print_bg_jobs();
+        print_bg_ls();
         skip_exec = true;
       }
 
@@ -354,6 +360,12 @@ int main(void) {
             // printf("In parent: Child exited. Status: %d\n", status);
           }
           else {
+
+            bg_list[curr_bg] = malloc(sizeof(struct background_entry));
+            bg_list[curr_bg]->pid = pid;
+            strcpy(bg_list[curr_bg]->cmd, line_cpy);
+
+            curr_bg+=1; //what if passes limit?
           }
         }
       }
