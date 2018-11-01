@@ -32,6 +32,11 @@ struct history_entry *new_history_entry (
   double exec_time
 );
 
+void free_hist_arr(
+  struct history_entry **history,
+  int curr_cmd_id
+);
+
 void overwrite_history_entry (
   struct history_entry *entry,
   int p_id,

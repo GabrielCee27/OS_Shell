@@ -94,10 +94,7 @@ void cd_to(char *path){
 }
 
 void clean_exit(void){
-  int i;
-  for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++)
-    free(history[i]);
-
+  free_hist_arr(history, curr_cmd_id);
   free_bg_arr(bg_list);
 
   exit(0);

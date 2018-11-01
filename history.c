@@ -4,13 +4,12 @@
 #include <string.h>
 
 void debug_print_history(struct history_entry **history, int curr_cmd_id){
-  printf("debug print history: \n");
+  printf("DEBUG print history: \n");
   int i;
   for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++){
     printf("i: %d | pid: %d [%ld|%d:%d|%f] %s\n", i, history[i]->pid, history[i]->cmd_id, history[i]->hour, history[i]->min,
     history[i]->run_time, history[i]->command);
   }
-
 }
 
 void print_history(struct history_entry **history, int curr_cmd_id) {
@@ -43,6 +42,12 @@ struct history_entry *new_history_entry(int p_id, int h, int m, int curr_cmd_id,
   strcpy(hist_ptr->command, command_line);
 
   return hist_ptr;
+}
+
+void free_hist_arr(struct history_entry **history, int curr_cmd_id){
+  int i;
+  for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++)
+    free(history[i]);
 }
 
 void overwrite_history_entry(struct history_entry *entry, int p_id, int h, int m, int curr_cmd_id, char *command_line,
@@ -89,15 +94,13 @@ void get_last_cmd_of(char *target_cmd, struct history_entry **history, int curr_
   strcpy(target_cmd, ""); //blank should be handled in shell
 }
 
-struct history_entry * get_hist_w_pid(int t_pid, struct history_entry **history, int curr_cmd_id) {
-
-  printf("Looking for entry w/ pid: %d\n", t_pid);
-
-  int i;
-  for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++){
-    printf("%d pid: %d\n", i, history[i]->pid);
-    // if(history[i]->pid == t_pid)
-    //   return (history[i]);
-  }
-  return NULL;
-}
+// struct history_entry * get_hist_w_pid(int t_pid, struct history_entry **history, int curr_cmd_id) {
+//   // printf("Looking for entry w/ pid: %d\n", t_pid);
+//   int i;
+//   for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++){
+//     printf("%d pid: %d\n", i, history[i]->pid);
+//     // if(history[i]->pid == t_pid)
+//     //   return (history[i]);
+//   }
+//   return NULL;
+// }
