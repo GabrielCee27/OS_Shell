@@ -3,6 +3,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
+ * Function: debug_print_history
+ * --------------------------------------------------------------
+ * Prints out all variables in history entry
+ *
+ * history: Array of entries
+ *
+ * curr_cmd_id: current count of entries
+*/
 void debug_print_history(struct history_entry **history, int curr_cmd_id){
   printf("DEBUG print history: \n");
   int i;
@@ -12,6 +21,15 @@ void debug_print_history(struct history_entry **history, int curr_cmd_id){
     history[i]->command);
 }
 
+/*
+ * Function: print_history
+ * --------------------------------------------------------------
+ * Prints out histroy entries in order
+ *
+ * history: Array of entries
+ *
+ * curr_cmd_id: current count of entries
+*/
 void print_history(struct history_entry **history, int curr_cmd_id) {
   int i = 0, count, num_entries = curr_cmd_id;
 
@@ -29,28 +47,74 @@ void print_history(struct history_entry **history, int curr_cmd_id) {
   }
 }
 
-
-struct history_entry *new_history_entry(int p_id, int h, int m, int curr_cmd_id,
-  char *command_line, double exec_time) {
+/*
+ * Function: new_history_entry
+ * --------------------------------------------------------------
+ * Creates and inits a new histroy entry
+ *
+ * pid: pid of entry
+ *
+ * h: hour
+ *
+ * m: minute
+ *
+ * curr_cmd_id: current count of entries
+ *
+ * cmd: command
+ *
+ * exec_time: execution time
+ *
+ * returns: a pointer to created entry
+*/
+struct history_entry *new_history_entry(int pid, int h, int m, int curr_cmd_id,
+  char *cmd, double exec_time) {
   struct history_entry * hist_ptr = malloc(sizeof(struct history_entry));
 
-  hist_ptr->pid = p_id;
+  hist_ptr->pid = pid;
   hist_ptr->hour = h;
   hist_ptr->min = m;
   hist_ptr->cmd_id = curr_cmd_id;
   hist_ptr->run_time = exec_time;
-  strcpy(hist_ptr->command, command_line);
+  strcpy(hist_ptr->command, cmd);
 
   return hist_ptr;
 }
 
+/*
+ * Function: free_hist_arr
+ * --------------------------------------------------------------
+ * Frees up history array
+ *
+ * history: Array of entries
+ *
+ * curr_cmd_id: current count of entries
+*/
 void free_hist_arr(struct history_entry **history, int curr_cmd_id){
   int i;
   for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++)
     free(history[i]);
 }
 
-void overwrite_history_entry(struct history_entry *entry, int p_id, int h, int m, int curr_cmd_id, char *command_line,
+/*
+ * Function: new_history_entry
+ * --------------------------------------------------------------
+ * Overwrites an existing history entry with new info
+ *
+ * entry: histroy_entry to overwrite
+ *
+ * pid: pid of entry
+ *
+ * h: hour
+ *
+ * m: minute
+ *
+ * curr_cmd_id: current count of entries
+ *
+ * cmd: command
+ *
+ * exec_time: execution time
+*/
+void overwrite_history_entry(struct history_entry *entry, int p_id, int h, int m, int curr_cmd_id, char *cmd,
   double exec_time){
 
     entry->pid = p_id;
@@ -58,19 +122,42 @@ void overwrite_history_entry(struct history_entry *entry, int p_id, int h, int m
     entry->min = m;
     entry->cmd_id = curr_cmd_id;
     entry->run_time = exec_time;
-    strcpy(entry->command, command_line);
+    strcpy(entry->command, cmd);
   }
 
+/*
+ * Function: get_command_at
+ * --------------------------------------------------------------
+ * Searches for command by execution id
+ *
+ * target_id: execution id
+ *
+ * cmd_dest: where to store command if found
+ *
+ * history: Array of entries
+ *
+ * curr_cmd_id: current count of entries
+*/
 void get_command_at(int target_id, char *cmd_dest, struct history_entry **history,
   int curr_cmd_id){
   if(target_id >= curr_cmd_id || (target_id < curr_cmd_id - HIST_MAX && target_id >= 0)){
     printf("The command you are trying to access is out of range!\n");
-    //TODO: Error handle
     return;
   }
   strcpy(cmd_dest, history[target_id % HIST_MAX]->command);
 }
 
+/*
+ * Function: get_last_cmd_of
+ * --------------------------------------------------------------
+ * Retrieves last entry of given command
+ *
+ * target_cmd: command to search for
+ *
+ * history: Array of entries
+ *
+ * curr_cmd_id: current count of entries
+*/
 void get_last_cmd_of(char *target_cmd, struct history_entry **history, int curr_cmd_id){
   int i = curr_cmd_id - 1, count, num_entries = curr_cmd_id;
 
@@ -94,14 +181,3 @@ void get_last_cmd_of(char *target_cmd, struct history_entry **history, int curr_
   printf("Did not find command in history\n");
   strcpy(target_cmd, ""); //blank should be handled in shell
 }
-
-// struct history_entry * get_hist_w_pid(int t_pid, struct history_entry **history, int curr_cmd_id) {
-//   // printf("Looking for entry w/ pid: %d\n", t_pid);
-//   int i;
-//   for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++){
-//     printf("%d pid: %d\n", i, history[i]->pid);
-//     // if(history[i]->pid == t_pid)
-//     //   return (history[i]);
-//   }
-//   return NULL;
-// }
