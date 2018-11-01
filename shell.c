@@ -16,6 +16,9 @@
 #include "timer.h"
 #include "background.h"
 
+//TODO: Shell Prototypes
+/* Prototypes */
+
 
 /* Global variables */
 struct history_entry *history [HIST_MAX];
@@ -116,15 +119,13 @@ void parse_cmd_line(char *line, char **cmd_line, bool *background) {
   }
 }
 
-// void print_cmds(char **cmd_line){
-//   int i = 0;
-//   while(cmd_line[i] != (char *) NULL){
-//     printf("cmd_line[%d]: %s\n", i, cmd_line[i]);
-//     i++;
-//   }
-// }
-
-//TODO: Error handle
+/*
+ * Function: rec_exec
+ * --------------------------------------------------------------
+ * Recursive execution. Handles pipes and redirections.
+ *
+ * cmd_line: command to execute
+*/
 void rec_exec(char **cmd_line) {
   int i = 0;
   char **nxt_cmd = NULL;
@@ -189,7 +190,6 @@ void rec_exec(char **cmd_line) {
     }
     rec_exec(nxt_cmd);
   }
-
 }
 
 
@@ -228,9 +228,8 @@ int main(void) {
         get_last_cmd_of(line, history, curr_cmd);
     }
 
-    char line_cpy[line_size]; //use to populate history_entry
+    char line_cpy[line_size]; //populate history_entry
     strcpy(line_cpy, line);
-    // printf("-> %s\n", line);
 
     //TODO:research ARG_MAX to find the max num of
     char *cmd_line[100];
@@ -254,7 +253,6 @@ int main(void) {
         skip_exec = true;
       }
       else if(strcmp(cmd_line[0], "jobs") == 0){
-        // print_bg_jobs();
         print_bg_ls(bg_list, curr_bg);
         skip_exec = true;
       }
@@ -263,14 +261,12 @@ int main(void) {
       if(!skip_exec){
         pid = fork();
         if(pid == 0){ //child
-          // print_cmds(cmd_line);
           rec_exec(cmd_line);
         }
         else { //parent
           if(!background) { //wait on process that just got created
             int status;
             waitpid(pid, &status, 0);
-            // printf("In parent: Child exited. Status: %d\n", status);
           }
           else {
             bg_list[curr_bg++] = new_background_entry(pid, line_cpy);
@@ -291,7 +287,6 @@ int main(void) {
           curr_time->tm_hour, curr_time->tm_min, curr_cmd, line_cpy, exec_time);
 
       curr_cmd++;
-      // debug_print_history(history, curr_cmd);
     }
   }
 
