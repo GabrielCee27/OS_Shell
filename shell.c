@@ -97,6 +97,9 @@ void clean_exit(void){
   int i;
   for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++)
     free(history[i]);
+
+  free_bg_arr(bg_list);
+
   exit(0);
 }
 
@@ -132,40 +135,6 @@ void parse_cmd_line(char *line, char **cmd_line, bool *background) {
     *background = true;
   }
 }
-
-/*
- * Function: sigint_handler
- * --------------------------------------------------------------
- * Doesn't exit shell if ctr+C is pressed
- *
- * signo: signal number
-*/
-void sigint_handler(int signo) {
-  printf("\n");
-  fflush(stdout);
-  int status;
-  //non-blocking call to check if a child is running
-  waitpid(p_pid, &status, 0);
-  if(status == 0)
-    print_prompt();
-}
-
-// void exec(char **cmd_line) {
-//   // printf("Last arg: %s\n", cmd_line[]);
-//
-//   pid_t pid = fork();
-//   // printf("pid: %d\n", pid);
-//   if(pid == 0){ //child
-//     // printf("Child Executing: %s\n", line_cpy);
-//     if(execvp(cmd_line[0], cmd_line) < 0) //checks if failed
-//       exit(0); //cleans up any failed children
-//   }
-//   else { //parent
-//     int status;
-//     wait(&status); //waits for a child to finish; Returns child pid
-//     printf("Child exited. Status: %d\n", status);
-//   }
-// }
 
 void print_cmds(char **cmd_line){
   int i = 0;
@@ -245,13 +214,29 @@ void rec_exec(char **cmd_line) {
 
 }
 
-//only gets called when a child exits
+/*
+ * Function: sigint_handler
+ * --------------------------------------------------------------
+ * Doesn't exit shell if ctr+C is pressed
+ *
+ * signo: signal number
+*/
+void sigint_handler(int signo) {
+  printf("\n");
+  fflush(stdout);
+  int status;
+  //non-blocking call to check if a child is running
+  waitpid(p_pid, &status, 0);
+  if(status == 0)
+    print_prompt();
+}
+
+//BUG: segfaults when child is done; maybe sigint_handler is interferring
 void sigchld_handler(int signo) {
   int status;
   pid_t w_pid = waitpid(-1, &status, WNOHANG);
-  if(w_pid != 0 && w_pid != -1) {
+  if(w_pid != 0 && w_pid != -1)
     rm_bg_w_pid(bg_list, curr_bg, w_pid);
-  }
 
   printf("end of sigchld_handler; pid: %d; status: %d\n", w_pid, status);
 }

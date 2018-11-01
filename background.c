@@ -13,6 +13,13 @@ struct background_entry *new_background_entry(int pid, char *cmd) {
   return bg_ptr;
 }
 
+void free_bg_arr(struct background_entry **bg_list) {
+int i;
+for(i = 0; i < BACKGROUND_MAX; i++)
+  if(bg_list[i] != NULL)
+    free(bg_list);
+}
+
 void print_bg_ls(struct background_entry **bg_list, int curr_bg) {
   printf("Background Jobs Currently Running:\n");
   int i;
