@@ -16,9 +16,13 @@
 #include "timer.h"
 #include "background.h"
 
-//TODO: Shell Prototypes
 /* Prototypes */
-
+void sigint_handler(int signo);
+void sigchld_handler(int signo);
+void cd_to(char *path);
+void clean_exit(void);
+void parse_cmd_line(char *line, char **cmd_line, bool *background);
+void rec_exec(char **cmd_line);
 
 /* Global variables */
 struct history_entry *history [HIST_MAX];
@@ -29,8 +33,105 @@ int curr_bg = 0;
 
 pid_t p_pid; //only used in sigint handler
 
+int main(void) {
 
-/* ---------------- sig stuff ----------------------------------*/
+  signal(SIGINT, sigint_handler);
+  signal(SIGCHLD, sigchld_handler);
+
+  p_pid = getpid(); //used for sigint handler
+
+  bool interactive = true;
+  if(!isatty(STDIN_FILENO))
+    interactive = false;
+
+  while(true){
+
+    time_t now = time(NULL);
+    struct tm *curr_time = localtime(&now);
+    if(interactive)
+      print_prompt(curr_cmd, curr_time);
+
+    char *line = NULL;
+    size_t line_size = 0;
+    int gl_stat = getline(&line, &line_size, stdin);
+    if(!interactive && gl_stat == -1)
+      clean_exit();
+
+    /* Checking for history execution */
+    if(line[0] == '!' && strlen(line) > 2){
+      line = &(line[1]); //rm !
+      if(line[0] == '!') //exec last command
+        get_command_at(curr_cmd-1, line, history, curr_cmd);
+      else if(isdigit(line[0]) != 0)
+        get_command_at(atoi(line), line, history, curr_cmd);
+      else //get the latest call of command
+        get_last_cmd_of(line, history, curr_cmd);
+    }
+
+    char line_cpy[line_size]; //populate history_entry
+    strcpy(line_cpy, line);
+
+    //TODO:research ARG_MAX to find the max num of
+    char *cmd_line[100];
+    bool background = false;
+    parse_cmd_line(line, cmd_line, &background);
+
+    if(cmd_line[0] != NULL){
+      double start = get_time();
+
+      /* Checking for built-ins */
+      bool skip_exec = false;
+      if(strcmp(cmd_line[0], "exit") == 0){
+        clean_exit();
+      }
+      else if(strcmp(cmd_line[0], "history") == 0){
+        print_history(history, curr_cmd);
+        skip_exec = true;
+      }
+      else if(strcmp(cmd_line[0], "cd") == 0){
+        cd_to(cmd_line[1]);
+        skip_exec = true;
+      }
+      else if(strcmp(cmd_line[0], "jobs") == 0){
+        print_bg_ls(bg_list, curr_bg);
+        skip_exec = true;
+      }
+
+      pid_t pid = 0;
+      if(!skip_exec){
+        pid = fork();
+        if(pid == 0){ //child
+          rec_exec(cmd_line);
+        }
+        else { //parent
+          if(!background) { //wait on process that just got created
+            int status;
+            waitpid(pid, &status, 0);
+          }
+          else {
+            bg_list[curr_bg++] = new_background_entry(pid, line_cpy);
+          }
+        }
+      }
+
+      double exec_time = get_time() - start;
+
+      if(background)
+        exec_time = start;
+
+      if(curr_cmd < HIST_MAX)
+        history[curr_cmd] = new_history_entry(pid, curr_time->tm_hour, curr_time->tm_min, curr_cmd, line_cpy,
+          exec_time);
+      else //hist arr is full, need to overwrite a pre-existing entry
+        overwrite_history_entry(history[curr_cmd % HIST_MAX], pid,
+          curr_time->tm_hour, curr_time->tm_min, curr_cmd, line_cpy, exec_time);
+
+      curr_cmd++;
+    }
+  }
+
+    return 0;
+}
 
 /*
  * Function: sigint_handler
@@ -190,105 +291,4 @@ void rec_exec(char **cmd_line) {
     }
     rec_exec(nxt_cmd);
   }
-}
-
-
-int main(void) {
-
-  signal(SIGINT, sigint_handler);
-  signal(SIGCHLD, sigchld_handler);
-
-  p_pid = getpid(); //used for sigint handler
-
-  bool interactive = true;
-  if(!isatty(STDIN_FILENO))
-    interactive = false;
-
-  while(true){
-
-    time_t now = time(NULL);
-    struct tm *curr_time = localtime(&now);
-    if(interactive)
-      print_prompt(curr_cmd, curr_time);
-
-    char *line = NULL;
-    size_t line_size = 0;
-    int gl_stat = getline(&line, &line_size, stdin);
-    if(!interactive && gl_stat == -1)
-      clean_exit();
-
-    /* Checking for history execution */
-    if(line[0] == '!' && strlen(line) > 2){
-      line = &(line[1]); //rm !
-      if(line[0] == '!') //exec last command
-        get_command_at(curr_cmd-1, line, history, curr_cmd);
-      else if(isdigit(line[0]) != 0)
-        get_command_at(atoi(line), line, history, curr_cmd);
-      else //get the latest call of command
-        get_last_cmd_of(line, history, curr_cmd);
-    }
-
-    char line_cpy[line_size]; //populate history_entry
-    strcpy(line_cpy, line);
-
-    //TODO:research ARG_MAX to find the max num of
-    char *cmd_line[100];
-    bool background = false;
-    parse_cmd_line(line, cmd_line, &background);
-
-    if(cmd_line[0] != NULL){
-      double start = get_time();
-
-      /* Checking for built-ins */
-      bool skip_exec = false;
-      if(strcmp(cmd_line[0], "exit") == 0){
-        clean_exit();
-      }
-      else if(strcmp(cmd_line[0], "history") == 0){
-        print_history(history, curr_cmd);
-        skip_exec = true;
-      }
-      else if(strcmp(cmd_line[0], "cd") == 0){
-        cd_to(cmd_line[1]);
-        skip_exec = true;
-      }
-      else if(strcmp(cmd_line[0], "jobs") == 0){
-        print_bg_ls(bg_list, curr_bg);
-        skip_exec = true;
-      }
-
-      pid_t pid = 0;
-      if(!skip_exec){
-        pid = fork();
-        if(pid == 0){ //child
-          rec_exec(cmd_line);
-        }
-        else { //parent
-          if(!background) { //wait on process that just got created
-            int status;
-            waitpid(pid, &status, 0);
-          }
-          else {
-            bg_list[curr_bg++] = new_background_entry(pid, line_cpy);
-          }
-        }
-      }
-
-      double exec_time = get_time() - start;
-
-      if(background)
-        exec_time = start;
-
-      if(curr_cmd < HIST_MAX)
-        history[curr_cmd] = new_history_entry(pid, curr_time->tm_hour, curr_time->tm_min, curr_cmd, line_cpy,
-          exec_time);
-      else //hist arr is full, need to overwrite a pre-existing entry
-        overwrite_history_entry(history[curr_cmd % HIST_MAX], pid,
-          curr_time->tm_hour, curr_time->tm_min, curr_cmd, line_cpy, exec_time);
-
-      curr_cmd++;
-    }
-  }
-
-    return 0;
 }
