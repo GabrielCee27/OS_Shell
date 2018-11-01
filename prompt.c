@@ -6,13 +6,14 @@
 #include <time.h>
 #include "prompt.h"
 
-//TODO: update description
 /*
  * Function: print_prompt
  * --------------------------------------------------------------
  * Retries the info needed to print the prompt
  *
+ * curr_cmd: current command
  *
+ * now_struct: current time
 */
 void print_prompt(int curr_cmd, struct tm *now_struct){
 

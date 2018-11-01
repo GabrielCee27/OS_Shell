@@ -2,7 +2,6 @@
 #define _HISTORY_H_
 
 #define HIST_MAX 100
-// #define HIST_MAX 5
 
 struct history_entry {
     int pid;

@@ -27,61 +27,35 @@ int curr_bg = 0;
 pid_t p_pid; //only used in sigint handler
 
 
+/* ---------------- sig stuff ----------------------------------*/
+
 /*
- * Function: homedir_replace
+ * Function: sigint_handler
  * --------------------------------------------------------------
- * Replaces the home directory part of the string with a '~'
+ * Doesn't exit shell if ctr+C is pressed
  *
- * cwd: string of current working directory
- *
- * cwd_len: length of cwd
- *
- * homedir_len: length of home directory string
- *
+ * signo: signal number
 */
-// void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
-//   char temp[cwd_len - homedir_len + 2];
-//
-//   temp[0] = '~';
-//   int i = 1, k = homedir_len;
-//   while(cwd[k] != '\0')
-//     temp[i++] = cwd[k++];
-//   temp[i] = '\0';
-//
-//   strcpy(cwd, temp);
-// }
+void sigint_handler(int signo) {
+  printf("\n");
+  fflush(stdout);
+  int status;
+  //non-blocking call to check if a child is running
+  waitpid(p_pid, &status, 0);
+  if(status == 0)
+    printf("Should print prompt\n");
+    // print_prompt();
+}
 
+//BUG: segfaults when child is done; maybe sigint_handler is interferring
+void sigchld_handler(int signo) {
+  int status;
+  pid_t w_pid = waitpid(-1, &status, WNOHANG);
+  if(w_pid != 0 && w_pid != -1)
+    rm_bg_w_pid(bg_list, curr_bg, w_pid);
 
-//TODO: update description
-/*
- * Function: print_prompt
- * --------------------------------------------------------------
- * Retries the info needed to print the prompt
- *
- *
-*/
-// void print_prompt(struct tm *now_struct){
-//
-//   char *user = getlogin();
-//   char hostname[HOST_NAME_MAX];
-//   gethostname(hostname, HOST_NAME_MAX);
-//
-//   char cwd[256];
-//   getcwd(cwd, sizeof(cwd));
-//
-//   char *homedir = getenv("HOME");
-//   int homedir_len = strlen(homedir);
-//
-//   /* Check if in home dir */
-//   if(strncmp(homedir, cwd, homedir_len) == 0)
-//     homedir_replace(cwd, strlen(cwd), homedir_len);
-//
-//   printf("[%d|%d:%02d|%s@%s:%s]$ ", curr_cmd, now_struct->tm_hour,
-//    now_struct->tm_min, user, hostname, cwd);
-//   fflush(stdout);
-// }
-
-/*---------------BUILT INS-------------------------------------- */
+  printf("end of sigchld_handler; pid: %d; status: %d\n", w_pid, status);
+}
 
 /*
  * Function: cd_to
@@ -108,8 +82,6 @@ void clean_exit(void){
   free_bg_arr(bg_list);
   exit(0);
 }
-
-/*---------------------------------------------------------------*/
 
 /*
  * Function: parse_cmd_line
@@ -158,7 +130,7 @@ void rec_exec(char **cmd_line) {
   char **nxt_cmd = NULL;
   char *output_file = NULL;
 
-  /* --------------------------------- */
+  /* -------- Parse for & and > ----- */
   while(cmd_line[i] != (char *) NULL){
     // printf("cmd_line[i]: %s\n", cmd_line[i]);
     if(strcmp(cmd_line[i], "|") == 0){
@@ -173,15 +145,13 @@ void rec_exec(char **cmd_line) {
     }
     i++;
   }
-  /* --------------------------------- */
 
   if(nxt_cmd == NULL) { //final cmd
     // printf("Final command\n");
     if(output_file != NULL){
       int output_fd = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-      if(output_fd != -1){
+      if(output_fd != -1)
         dup2(output_fd, STDOUT_FILENO);
-      }
     }
 
     if(execvp(cmd_line[0], cmd_line) < 0)
@@ -222,45 +192,13 @@ void rec_exec(char **cmd_line) {
 
 }
 
-/* ------------ sig stuff ----------------------------------*/
-
-/*
- * Function: sigint_handler
- * --------------------------------------------------------------
- * Doesn't exit shell if ctr+C is pressed
- *
- * signo: signal number
-*/
-void sigint_handler(int signo) {
-  printf("\n");
-  fflush(stdout);
-  int status;
-  //non-blocking call to check if a child is running
-  waitpid(p_pid, &status, 0);
-  if(status == 0)
-    printf("Should print prompt\n");
-    // print_prompt();
-}
-
-//BUG: segfaults when child is done; maybe sigint_handler is interferring
-void sigchld_handler(int signo) {
-  int status;
-  pid_t w_pid = waitpid(-1, &status, WNOHANG);
-  if(w_pid != 0 && w_pid != -1)
-    rm_bg_w_pid(bg_list, curr_bg, w_pid);
-
-  printf("end of sigchld_handler; pid: %d; status: %d\n", w_pid, status);
-}
-
-/* --------------------------------------------------------------------*/
-
 
 int main(void) {
 
   signal(SIGINT, sigint_handler);
   signal(SIGCHLD, sigchld_handler);
 
-  p_pid = getpid();
+  p_pid = getpid(); //used for sigint handler
 
   bool interactive = true;
   if(!isatty(STDIN_FILENO))

@@ -6,10 +6,10 @@
 void debug_print_history(struct history_entry **history, int curr_cmd_id){
   printf("DEBUG print history: \n");
   int i;
-  for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++){
-    printf("i: %d | pid: %d [%ld|%d:%d|%f] %s\n", i, history[i]->pid, history[i]->cmd_id, history[i]->hour, history[i]->min,
-    history[i]->run_time, history[i]->command);
-  }
+  for(i = 0; i < HIST_MAX && i < curr_cmd_id; i++)
+    printf("i: %d | pid: %d [%ld|%d:%d|%f] %s\n", i, history[i]->pid,
+    history[i]->cmd_id, history[i]->hour, history[i]->min, history[i]->run_time,
+    history[i]->command);
 }
 
 void print_history(struct history_entry **history, int curr_cmd_id) {
@@ -30,8 +30,8 @@ void print_history(struct history_entry **history, int curr_cmd_id) {
 }
 
 
-struct history_entry *new_history_entry(int p_id, int h, int m, int curr_cmd_id, char *command_line,
-  double exec_time) {
+struct history_entry *new_history_entry(int p_id, int h, int m, int curr_cmd_id,
+  char *command_line, double exec_time) {
   struct history_entry * hist_ptr = malloc(sizeof(struct history_entry));
 
   hist_ptr->pid = p_id;
@@ -61,7 +61,8 @@ void overwrite_history_entry(struct history_entry *entry, int p_id, int h, int m
     strcpy(entry->command, command_line);
   }
 
-void get_command_at(int target_id, char *cmd_dest, struct history_entry **history, int curr_cmd_id){
+void get_command_at(int target_id, char *cmd_dest, struct history_entry **history,
+  int curr_cmd_id){
   if(target_id >= curr_cmd_id || (target_id < curr_cmd_id - HIST_MAX && target_id >= 0)){
     printf("The command you are trying to access is out of range!\n");
     //TODO: Error handle
