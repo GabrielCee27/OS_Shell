@@ -11,6 +11,7 @@
 #include <time.h>
 #include <ctype.h>
 
+#include "prompt.h"
 #include "history.h"
 #include "timer.h"
 #include "background.h"
@@ -18,12 +19,12 @@
 
 /* Global variables */
 struct history_entry *history [HIST_MAX];
-int curr_cmd_id = 0;
+int curr_cmd = 0;
 
 struct background_entry *bg_list[BACKGROUND_MAX];
 int curr_bg = 0;
 
-pid_t p_pid;
+pid_t p_pid; //only used in sigint handler
 
 
 /*
@@ -38,53 +39,57 @@ pid_t p_pid;
  * homedir_len: length of home directory string
  *
 */
-void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
-  char temp[cwd_len - homedir_len + 2];
+// void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
+//   char temp[cwd_len - homedir_len + 2];
+//
+//   temp[0] = '~';
+//   int i = 1, k = homedir_len;
+//   while(cwd[k] != '\0')
+//     temp[i++] = cwd[k++];
+//   temp[i] = '\0';
+//
+//   strcpy(cwd, temp);
+// }
 
-  temp[0] = '~';
-  int i = 1, k = homedir_len;
-  while(cwd[k] != '\0')
-    temp[i++] = cwd[k++];
-  temp[i] = '\0';
 
-  strcpy(cwd, temp);
-}
-
-
+//TODO: update description
 /*
  * Function: print_prompt
  * --------------------------------------------------------------
  * Retries the info needed to print the prompt
  *
- * returns: time when prompt was printed
+ *
 */
-void print_prompt(struct tm *now_struct){
+// void print_prompt(struct tm *now_struct){
+//
+//   char *user = getlogin();
+//   char hostname[HOST_NAME_MAX];
+//   gethostname(hostname, HOST_NAME_MAX);
+//
+//   char cwd[256];
+//   getcwd(cwd, sizeof(cwd));
+//
+//   char *homedir = getenv("HOME");
+//   int homedir_len = strlen(homedir);
+//
+//   /* Check if in home dir */
+//   if(strncmp(homedir, cwd, homedir_len) == 0)
+//     homedir_replace(cwd, strlen(cwd), homedir_len);
+//
+//   printf("[%d|%d:%02d|%s@%s:%s]$ ", curr_cmd, now_struct->tm_hour,
+//    now_struct->tm_min, user, hostname, cwd);
+//   fflush(stdout);
+// }
 
-  char *user = getlogin();
-  char hostname[HOST_NAME_MAX];
-  gethostname(hostname, HOST_NAME_MAX);
+/*---------------BUILT INS-------------------------------------- */
 
-  char cwd[256];
-  getcwd(cwd, sizeof(cwd));
-
-  char *homedir = getenv("HOME");
-  int homedir_len = strlen(homedir);
-
-  /* Check if in home dir */
-  if(strncmp(homedir, cwd, homedir_len) == 0)
-    homedir_replace(cwd, strlen(cwd), homedir_len);
-
-  // time_t now = time(NULL);
-  // struct tm *now_struct = localtime(&now);
-
-  printf("[%d|%d:%02d|%s@%s:%s]$ ", curr_cmd_id, now_struct->tm_hour,
-   now_struct->tm_min, user, hostname, cwd);
-  fflush(stdout);
-
-  // return now_struct;
-}
-
-
+/*
+ * Function: cd_to
+ * --------------------------------------------------------------
+ * Changes directory to given path
+ *
+ * path: path to change to
+*/
 void cd_to(char *path){
   if(path == NULL)
     path = getenv("HOME");
@@ -93,11 +98,18 @@ void cd_to(char *path){
     perror("chdir");
 }
 
+/*
+ * Function: clean_exit
+ * --------------------------------------------------------------
+ * Free up heap and exit
+*/
 void clean_exit(void){
-  free_hist_arr(history, curr_cmd_id);
+  free_hist_arr(history, curr_cmd);
   free_bg_arr(bg_list);
   exit(0);
 }
+
+/*---------------------------------------------------------------*/
 
 /*
  * Function: parse_cmd_line
@@ -132,13 +144,13 @@ void parse_cmd_line(char *line, char **cmd_line, bool *background) {
   }
 }
 
-void print_cmds(char **cmd_line){
-  int i = 0;
-  while(cmd_line[i] != (char *) NULL){
-    printf("cmd_line[%d]: %s\n", i, cmd_line[i]);
-    i++;
-  }
-}
+// void print_cmds(char **cmd_line){
+//   int i = 0;
+//   while(cmd_line[i] != (char *) NULL){
+//     printf("cmd_line[%d]: %s\n", i, cmd_line[i]);
+//     i++;
+//   }
+// }
 
 //TODO: Error handle
 void rec_exec(char **cmd_line) {
@@ -210,6 +222,8 @@ void rec_exec(char **cmd_line) {
 
 }
 
+/* ------------ sig stuff ----------------------------------*/
+
 /*
  * Function: sigint_handler
  * --------------------------------------------------------------
@@ -238,6 +252,8 @@ void sigchld_handler(int signo) {
   printf("end of sigchld_handler; pid: %d; status: %d\n", w_pid, status);
 }
 
+/* --------------------------------------------------------------------*/
+
 
 int main(void) {
 
@@ -255,7 +271,7 @@ int main(void) {
     time_t now = time(NULL);
     struct tm *curr_time = localtime(&now);
     if(interactive)
-      print_prompt(curr_time);
+      print_prompt(curr_cmd, curr_time);
 
     char *line = NULL;
     size_t line_size = 0;
@@ -267,11 +283,11 @@ int main(void) {
     if(line[0] == '!' && strlen(line) > 2){
       line = &(line[1]); //rm !
       if(line[0] == '!') //exec last command
-        get_command_at(curr_cmd_id-1, line, history, curr_cmd_id);
+        get_command_at(curr_cmd-1, line, history, curr_cmd);
       else if(isdigit(line[0]) != 0)
-        get_command_at(atoi(line), line, history, curr_cmd_id);
+        get_command_at(atoi(line), line, history, curr_cmd);
       else //get the latest call of command
-        get_last_cmd_of(line, history, curr_cmd_id);
+        get_last_cmd_of(line, history, curr_cmd);
     }
 
     char line_cpy[line_size]; //use to populate history_entry
@@ -292,7 +308,7 @@ int main(void) {
         clean_exit();
       }
       else if(strcmp(cmd_line[0], "history") == 0){
-        print_history(history, curr_cmd_id);
+        print_history(history, curr_cmd);
         skip_exec = true;
       }
       else if(strcmp(cmd_line[0], "cd") == 0){
@@ -313,8 +329,7 @@ int main(void) {
           rec_exec(cmd_line);
         }
         else { //parent
-          if(!background) {
-            //wait on process that just got created
+          if(!background) { //wait on process that just got created
             int status;
             waitpid(pid, &status, 0);
             // printf("In parent: Child exited. Status: %d\n", status);
@@ -328,17 +343,17 @@ int main(void) {
       double exec_time = get_time() - start;
 
       if(background)
-        exec_time = 0; //TODO: change to start and update later
+        exec_time = start;
 
-      if(curr_cmd_id < HIST_MAX)
-        history[curr_cmd_id] = new_history_entry(pid, curr_time->tm_hour, curr_time->tm_min, curr_cmd_id, line_cpy,
+      if(curr_cmd < HIST_MAX)
+        history[curr_cmd] = new_history_entry(pid, curr_time->tm_hour, curr_time->tm_min, curr_cmd, line_cpy,
           exec_time);
       else //hist arr is full, need to overwrite a pre-existing entry
-        overwrite_history_entry(history[curr_cmd_id % HIST_MAX], pid,
-          curr_time->tm_hour, curr_time->tm_min, curr_cmd_id, line_cpy, exec_time);
+        overwrite_history_entry(history[curr_cmd % HIST_MAX], pid,
+          curr_time->tm_hour, curr_time->tm_min, curr_cmd, line_cpy, exec_time);
 
-      curr_cmd_id++;
-      // debug_print_history(history, curr_cmd_id);
+      curr_cmd++;
+      // debug_print_history(history, curr_cmd);
     }
   }
 
