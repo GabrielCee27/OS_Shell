@@ -323,29 +323,24 @@ int main(void) {
         }
         else { //parent
           if(!background) {
-            int status;
             //gonna wait on the process that just got forked instead of being interupted
             //by a background process exiting
-            pid_t wait_pid = waitpid(pid, &status, 0);
+            int status;
+            waitpid(pid, &status, 0);
             // printf("In parent: Child exited. Status: %d\n", status);
           }
           else {
-
-            bg_list[curr_bg] = malloc(sizeof(struct background_entry));
-            bg_list[curr_bg]->pid = pid;
-            strcpy(bg_list[curr_bg]->cmd, line_cpy);
-
-            curr_bg+=1; //what if passes limit?
+            bg_list[curr_bg++] = new_background_entry(pid, line_cpy);
           }
         }
       }
 
-      printf("Child pid: %d\n", pid);
+      // printf("Child pid: %d\n", pid);
 
       double exec_time = get_time() - start;
 
       if(background)
-        exec_time = 0; //TODO: change to start
+        exec_time = 0; //TODO: change to start and update later
 
       if(curr_cmd_id < HIST_MAX){
         history[curr_cmd_id] = new_history_entry(pid, curr_time->tm_hour, curr_time->tm_min,
