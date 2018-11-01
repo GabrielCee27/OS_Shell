@@ -58,7 +58,7 @@ void homedir_replace(char *cwd, int cwd_len, int homedir_len) {
  *
  * returns: time when prompt was printed
 */
-struct tm *print_prompt(void){
+void print_prompt(struct tm *now_struct){
 
   char *user = getlogin();
   char hostname[HOST_NAME_MAX];
@@ -74,17 +74,17 @@ struct tm *print_prompt(void){
   if(strncmp(homedir, cwd, homedir_len) == 0)
     homedir_replace(cwd, strlen(cwd), homedir_len);
 
-  time_t now = time(NULL);
-  struct tm *now_struct = localtime(&now);
+  // time_t now = time(NULL);
+  // struct tm *now_struct = localtime(&now);
 
   printf("[%d|%d:%02d|%s@%s:%s]$ ", curr_cmd_id, now_struct->tm_hour,
    now_struct->tm_min, user, hostname, cwd);
   fflush(stdout);
 
-  return now_struct;
+  // return now_struct;
 }
 
-//TODO: error handle to not crash shell
+
 void cd_to(char *path){
   if(path == NULL)
     path = getenv("HOME");
@@ -96,7 +96,6 @@ void cd_to(char *path){
 void clean_exit(void){
   free_hist_arr(history, curr_cmd_id);
   free_bg_arr(bg_list);
-
   exit(0);
 }
 
@@ -225,7 +224,8 @@ void sigint_handler(int signo) {
   //non-blocking call to check if a child is running
   waitpid(p_pid, &status, 0);
   if(status == 0)
-    print_prompt();
+    printf("Should print prompt\n");
+    // print_prompt();
 }
 
 //BUG: segfaults when child is done; maybe sigint_handler is interferring
@@ -246,13 +246,22 @@ int main(void) {
 
   p_pid = getpid();
 
+  bool interactive = true;
+  if(!isatty(STDIN_FILENO))
+    interactive = false;
+
   while(true){
 
-    struct tm *curr_time = print_prompt();
+    time_t now = time(NULL);
+    struct tm *curr_time = localtime(&now);
+    if(interactive)
+      print_prompt(curr_time);
 
     char *line = NULL;
     size_t line_size = 0;
-    getline(&line, &line_size, stdin);
+    int gl_stat = getline(&line, &line_size, stdin);
+    if(!interactive && gl_stat == -1)
+      clean_exit();
 
     /* Checking for history execution */
     if(line[0] == '!' && strlen(line) > 2){
@@ -305,8 +314,7 @@ int main(void) {
         }
         else { //parent
           if(!background) {
-            //gonna wait on the process that just got forked instead of being interupted
-            //by a background process exiting
+            //wait on process that just got created
             int status;
             waitpid(pid, &status, 0);
             // printf("In parent: Child exited. Status: %d\n", status);
@@ -317,21 +325,17 @@ int main(void) {
         }
       }
 
-      // printf("Child pid: %d\n", pid);
-
       double exec_time = get_time() - start;
 
       if(background)
         exec_time = 0; //TODO: change to start and update later
 
-      if(curr_cmd_id < HIST_MAX){
-        history[curr_cmd_id] = new_history_entry(pid, curr_time->tm_hour, curr_time->tm_min,
-          curr_cmd_id, line_cpy, exec_time);
-      }
-      else { //overwrite an existing entry
-        overwrite_history_entry(history[curr_cmd_id % HIST_MAX], pid, curr_time->tm_hour, curr_time->tm_min,
-          curr_cmd_id, line_cpy, exec_time);
-      }
+      if(curr_cmd_id < HIST_MAX)
+        history[curr_cmd_id] = new_history_entry(pid, curr_time->tm_hour, curr_time->tm_min, curr_cmd_id, line_cpy,
+          exec_time);
+      else //hist arr is full, need to overwrite a pre-existing entry
+        overwrite_history_entry(history[curr_cmd_id % HIST_MAX], pid,
+          curr_time->tm_hour, curr_time->tm_min, curr_cmd_id, line_cpy, exec_time);
 
       curr_cmd_id++;
       // debug_print_history(history, curr_cmd_id);
