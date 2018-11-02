@@ -146,19 +146,26 @@ void sigint_handler(int signo) {
   int status;
   //non-blocking call to check if a child is running
   waitpid(p_pid, &status, 0);
-  if(status == 0)
-    printf("Should print prompt\n");
-    // print_prompt();
+  if(status != 0){
+    time_t now = time(NULL);
+    struct tm *curr_time = localtime(&now);
+    print_prompt(curr_cmd, curr_time);
+  }
 }
 
-//BUG: segfaults when child is done; maybe sigint_handler is interferring
+/*
+ * Function: sigchld_handler
+ * --------------------------------------------------------------
+ * signal child handler
+ *
+ * signo: signal number
+*/
 void sigchld_handler(int signo) {
   int status;
   pid_t w_pid = waitpid(-1, &status, WNOHANG);
-  if(w_pid != 0 && w_pid != -1)
+  if(w_pid != 0 && w_pid != -1){
     rm_bg_w_pid(bg_list, curr_bg, w_pid);
-
-  printf("end of sigchld_handler; pid: %d; status: %d\n", w_pid, status);
+  }
 }
 
 /*
@@ -232,9 +239,8 @@ void rec_exec(char **cmd_line) {
   char **nxt_cmd = NULL;
   char *output_file = NULL;
 
-  /* -------- Parse for & and > ----- */
+  /* -------- Look for & and > ----- */
   while(cmd_line[i] != (char *) NULL){
-    // printf("cmd_line[i]: %s\n", cmd_line[i]);
     if(strcmp(cmd_line[i], "|") == 0){
       cmd_line[i] = (char *) NULL;
       nxt_cmd = &(cmd_line[i+1]);
@@ -249,7 +255,6 @@ void rec_exec(char **cmd_line) {
   }
 
   if(nxt_cmd == NULL) { //final cmd
-    // printf("Final command\n");
     if(output_file != NULL){
       int output_fd = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
       if(output_fd != -1)
@@ -260,11 +265,10 @@ void rec_exec(char **cmd_line) {
       exit(0);
   }
 
-  //set up pipes
+  /* Going to pipe */
   int p_fd[2];
   if(pipe(p_fd) == -1){
     perror("pipe");
-    // return EXIT_FAILURE;
     return;
   }
 
@@ -274,7 +278,6 @@ void rec_exec(char **cmd_line) {
     close(p_fd[0]);
     if(dup2(p_fd[1], STDOUT_FILENO) == -1){
       perror("dup2");
-      // return 1;
       return;
     }
 
@@ -286,7 +289,6 @@ void rec_exec(char **cmd_line) {
     close(p_fd[1]);
     if(dup2(p_fd[0], STDIN_FILENO) == -1){
       perror("dup2");
-      // return 1;
       return;
     }
     rec_exec(nxt_cmd);
