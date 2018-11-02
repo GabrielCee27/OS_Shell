@@ -71,7 +71,6 @@ int main(void) {
     char line_cpy[line_size]; //populate history_entry
     strcpy(line_cpy, line);
 
-    //TODO:research ARG_MAX to find the max num of
     char *cmd_line[100];
     bool background = false;
     parse_cmd_line(line, cmd_line, &background);
